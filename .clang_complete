@@ -1,0 +1,11 @@
+-DPDFTALK_VERSION=0
+-std=c++14
+-I.
+-Isrc
+-isystem /usr/include/qt
+-isystem /usr/include/qt/QtWidgets
+-isystem /usr/include/qt/QtGui
+-isystem /usr/include/qt/QtCore
+-isystem /usr/include/poppler
+-isystem /usr/include/poppler/qt5
+
