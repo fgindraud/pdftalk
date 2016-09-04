@@ -11,6 +11,11 @@ HEADERS +=
 SOURCES += \
 	src/main.cpp
 
+# Poppler
+macx: { # Mac
+	# Stack overflow : pkg config disabled by default on mac...
+	QT_CONFIG -= no-pkg-config
+}
 CONFIG += link_pkgconfig
 PKGCONFIG += poppler-qt5
 
