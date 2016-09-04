@@ -11,18 +11,8 @@ HEADERS +=
 SOURCES += \
 	src/main.cpp
 
-### Poppler ###
-
-unix:!macx { # Linux
-	CONFIG += link_pkgconfig
-	PKGCONFIG += poppler-qt5
-}
-macx: {
-	# TODO
-}
-win32: {
-	# TODO
-}
+CONFIG += link_pkgconfig
+PKGCONFIG += poppler-qt5
 
 ### Misc information ###
 
