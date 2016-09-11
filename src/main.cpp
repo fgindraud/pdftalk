@@ -14,22 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "window_pair.h"
+#include "main.h"
+
 #include <QApplication>
 #include <QCommandLineParser>
-#include "window_pair.h"
-
-#include <memory>
-#include <poppler-qt5.h>
-
-// Rendering
-#include <QDebug>
-#include <QLabel>
-#include <QPixmap>
-
-class PresentationWindow : public QLabel {
-	Q_OBJECT
-public:
-};
 
 int main (int argc, char * argv[]) {
 	QApplication app (argc, argv);
@@ -40,14 +29,6 @@ int main (int argc, char * argv[]) {
 #undef STR
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
-
-	auto a = new QLabel ("Primary screen");
-	a->setWindowTitle ("Primary");
-	auto b = new QLabel ("Secondary screen");
-	b->setWindowTitle ("Secondary");
-	WindowPair windows{a, b};
-
-	return app.exec ();
 
 	QCommandLineParser parser;
 	parser.setApplicationDescription ("PDF presentation tool");
@@ -60,32 +41,10 @@ int main (int argc, char * argv[]) {
 		parser.showHelp (EXIT_FAILURE);
 		Q_UNREACHABLE ();
 	}
-	QString pdf_filename = arguments[0];
 
-	std::unique_ptr<Poppler::Document> document (Poppler::Document::load (pdf_filename));
-	if (!document || document->isLocked ()) {
-		qFatal ("Unable to open pdf");
-	}
-
-	std::unique_ptr<Poppler::Page> page (document->page (0));
-	if (!page)
-		qFatal ("Unable to get page 0");
-
-	auto image = page->renderToImage (300, 300);
-	if (image.isNull ())
-		qFatal ("Render failed");
-
-	qDebug () << image;
-	auto pixmap = QPixmap::fromImage (std::move (image));
-	qDebug () << pixmap;
-	QLabel label;
-	label.setPixmap (pixmap);
-	label.setScaledContents (true);
-	label.show ();
-
-	/* TODO
-	 * poppler rendering, see code of okular
-	 */
-
+	auto presentation = new PresentationWindow(arguments[0]);
+	auto b = new QLabel ("Secondary screen");
+	b->setWindowTitle ("Secondary");
+	WindowPair windows{presentation, b};
 	return app.exec ();
 }

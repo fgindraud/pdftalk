@@ -20,12 +20,13 @@
 
 #include <QApplication>
 #include <QCloseEvent>
+#include <QHBoxLayout>
 #include <QKeySequence>
+#include <QMainWindow>
 #include <QShortcut>
-#include <QWidget>
 #include <array>
 
-class WindowPairElement : public QWidget {
+class WindowPairElement : public QMainWindow {
 	/* Detect close event to quit application.
 	 * Toggle fullscreen on 'f' key.
 	 */
@@ -42,7 +43,7 @@ private slots:
 	void toogle_fullscreen (void) { setWindowState (windowState () ^ Qt::WindowFullScreen); }
 
 private:
-	void closeEvent (QCloseEvent * event) {
+	void closeEvent (QCloseEvent * event) Q_DECL_OVERRIDE {
 		event->accept ();
 		QApplication::quit ();
 	}
@@ -89,13 +90,15 @@ private slots:
 
 private:
 	void set_content_position (void) {
+		// De-parent contents
+		for (auto & c : contents)
+			c->setParent (nullptr);
+		// Re-set MainWindow widgets
 		for (int i = 0; i < nb_window; ++i) {
 			auto w = &windows[(i + current_shift) % nb_window];
-			contents[i]->setParent (w);
+			w->setCentralWidget (contents[i]);
 			w->setWindowTitle (contents[i]->windowTitle ());
 		}
-		for (auto & c : contents)
-			c->show ();
 	}
 };
 
