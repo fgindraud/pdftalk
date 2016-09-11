@@ -7,7 +7,8 @@ INCLUDEPATH += src/
 CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 QT += core widgets
-HEADERS +=
+HEADERS += \
+	src/window_pair.h
 SOURCES += \
 	src/main.cpp
 

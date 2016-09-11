@@ -16,80 +16,19 @@
  */
 #include <QApplication>
 #include <QCommandLineParser>
+#include "window_pair.h"
+
 #include <memory>
-
-#include <QKeySequence>
-#include <QShortcut>
-#include <QWidget>
-#include <array>
-
 #include <poppler-qt5.h>
 
+// Rendering
 #include <QDebug>
 #include <QLabel>
 #include <QPixmap>
 
-/* For screen position:
- * QWidget::window() returns the QWindow
- * QWindow::setScreen()/QWindow::screen()
- * QScreen: get screens and such
- *
- */
-
-template <int nb_window> class WindowSet : public QObject {
-	/* This class takes nb_window content QWidgets, and place them in nb_window windows.
-	 * Pushing the 'f' key on a window will put it in fullscreen.
-	 * Pushing the 's' key will rotate content between windows.
-	 * The windowTitle property of content widgets is propagated to their associated window.
-	 */
-private:
-	std::array<QWidget, nb_window> windows;
-	std::array<QWidget *, nb_window> contents;
-	int current_shift{0};
-
+class PresentationWindow : public QLabel {
+	Q_OBJECT
 public:
-	template <typename... Args> WindowSet (Args &&... args) : contents{std::forward<Args> (args)...} {
-		for (auto & w : windows) {
-			{
-				// Swap shortcut
-				auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);
-				sc->setAutoRepeat (false);
-				connect (sc, &QShortcut::activated, this, &WindowSet::shift_content);
-			}
-			{
-				// Toggle fullscreen
-				auto sc = new QShortcut (QKeySequence (tr ("f", "fullscreen key")), &w);
-				sc->setAutoRepeat (false);
-				connect (sc, &QShortcut::activated, this, &WindowSet::toogle_fullscreen);
-			}
-		}
-		set_content_position ();
-		for (auto & w : windows)
-			w.show ();
-	}
-
-private slots:
-	void shift_content (void) {
-		current_shift = (current_shift + 1) % nb_window;
-		set_content_position ();
-	}
-
-	void toogle_fullscreen (void) {
-		auto window = qobject_cast<QWidget *> (sender ()->parent ());
-		Q_ASSERT (window != nullptr);
-		window->setWindowState (window->windowState () ^ Qt::WindowFullScreen);
-	}
-
-private:
-	void set_content_position (void) {
-		for (int i = 0; i < nb_window; ++i) {
-			auto w = &windows[(i + current_shift) % nb_window];
-			contents[i]->setParent (w);
-			w->setWindowTitle (contents[i]->windowTitle ());
-		}
-		for (auto & c : contents)
-			c->show ();
-	}
 };
 
 int main (int argc, char * argv[]) {
@@ -106,7 +45,7 @@ int main (int argc, char * argv[]) {
 	a->setWindowTitle ("Primary");
 	auto b = new QLabel ("Secondary screen");
 	b->setWindowTitle ("Secondary");
-	WindowSet<2> windows{a, b};
+	WindowPair windows{a, b};
 
 	return app.exec ();
 
