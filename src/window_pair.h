@@ -64,40 +64,40 @@ class WindowPair : public QObject {
 
 private:
 	static constexpr int nb_window = 2; // cannot be template due to Q_OBJECT...
-	std::array<WindowPairElement, nb_window> windows;
-	std::array<QWidget *, nb_window> contents;
-	int current_shift{0};
+	std::array<WindowPairElement, nb_window> windows_;
+	std::array<QWidget *, nb_window> contents_;
+	int current_shift_{0};
 
 public:
 	template <typename... Args>
-	WindowPair (Args &&... args) : contents{std::forward<Args> (args)...} {
-		for (auto & w : windows) {
+	WindowPair (Args &&... args) : contents_{std::forward<Args> (args)...} {
+		for (auto & w : windows_) {
 			// Swap shortcut
 			auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);
 			sc->setAutoRepeat (false);
 			connect (sc, &QShortcut::activated, this, &WindowPair::shift_content);
 		}
 		set_content_position ();
-		for (auto & w : windows)
+		for (auto & w : windows_)
 			w.show ();
 	}
 
 private slots:
 	void shift_content (void) {
-		current_shift = (current_shift + 1) % nb_window;
+		current_shift_ = (current_shift_ + 1) % nb_window;
 		set_content_position ();
 	}
 
 private:
 	void set_content_position (void) {
 		// De-parent contents
-		for (auto & c : contents)
+		for (auto & c : contents_)
 			c->setParent (nullptr);
 		// Re-set MainWindow widgets
 		for (int i = 0; i < nb_window; ++i) {
-			auto w = &windows[(i + current_shift) % nb_window];
-			w->setCentralWidget (contents[i]);
-			w->setWindowTitle (contents[i]->windowTitle ());
+			auto w = &windows_[(i + current_shift_) % nb_window];
+			w->setCentralWidget (contents_[i]);
+			w->setWindowTitle (contents_[i]->windowTitle ());
 		}
 	}
 };

@@ -26,7 +26,8 @@ matrix:
         dist: trusty
         sudo: required
    allow_failures:
-      - env: PLATFORM=windows
+      - env: PLATFORM=windows RELEASE=true BITS=32
+      - env: PLATFORM=windows RELEASE=true BITS=64
 
 before_install:
    - source ./build/${PLATFORM}/requirement.sh

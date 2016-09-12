@@ -18,37 +18,23 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <memory> // unique_ptr
-#include <poppler-qt5.h>
+#include "document.h"
 
-// Rendering
 #include <QDebug>
 #include <QLabel>
 #include <QPalette>
-#include <QPixmap>
 #include <QResizeEvent>
 #include <QShortcut>
-#include <QShowEvent>
 
 class PresentationWindow : public QLabel {
 	Q_OBJECT
 
 private:
-	std::unique_ptr<Poppler::Document> document;
-	int current_page{0};
+	const Document & document_;
+	int current_page_{0};
 
 public:
-	PresentationWindow (const QString & filename) : document (Poppler::Document::load (filename)) {
-		if (!document || document->isLocked ()) {
-			qFatal ("Unable to open pdf");
-		}
-		if (document->numPages () <= 0) {
-			qFatal ("Document has no content !");
-		}
-		// Antialiasing is necessary
-		document->setRenderHint (Poppler::Document::Antialiasing, true);
-		document->setRenderHint (Poppler::Document::TextAntialiasing, true);
-
+	PresentationWindow (const Document & document) : document_ (document) {
 		{
 			auto sc = new QShortcut (QKeySequence (tr ("Right")), this);
 			connect (sc, &QShortcut::activated, this, &PresentationWindow::next_slide);
@@ -59,7 +45,7 @@ public:
 		}
 
 		// Title
-		setWindowTitle (tr ("Presentation screen - %1").arg (filename));
+		setWindowTitle (tr ("Presentation screen"));
 		// Center
 		setAlignment (Qt::AlignCenter);
 		// Black background
@@ -71,11 +57,11 @@ public:
 
 private slots:
 	void next_slide (void) {
-		current_page = std::min (current_page + 1, document->numPages () - 1);
+		current_page_ = std::min (current_page_ + 1, document_.nb_pages () - 1);
 		render ();
 	}
 	void prev_slide (void) {
-		current_page = std::max (current_page - 1, 0);
+		current_page_ = std::max (current_page_ - 1, 0);
 		render ();
 	}
 
@@ -85,22 +71,7 @@ private:
 		render ();
 	}
 
-	void render (void) {
-		QSize s = size ();
-		// Render current page, must fit in size
-		std::unique_ptr<Poppler::Page> page (document->page (current_page));
-		Q_ASSERT (page);
-		// Determine render size with aspect ratio
-		const auto page_size_dots = page->pageSizeF ();
-		const qreal dpi =
-		    std::min (static_cast<qreal> (s.width ()) / (page_size_dots.width () / 72.0),
-		              static_cast<qreal> (s.height ()) / (page_size_dots.height () / 72.0));
-		//qDebug () << s << dpi;
-		auto image = page->renderToImage (dpi, dpi);
-		Q_ASSERT (!image.isNull ());
-		auto pixmap = QPixmap::fromImage (std::move (image));
-		setPixmap (pixmap);
-	}
+	void render (void) { setPixmap (document_.render (current_page_, size ())); }
 };
 
 #endif

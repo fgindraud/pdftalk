@@ -42,7 +42,9 @@ int main (int argc, char * argv[]) {
 		Q_UNREACHABLE ();
 	}
 
-	auto presentation = new PresentationWindow(arguments[0]);
+	Document document (arguments[0]);
+
+	auto presentation = new PresentationWindow(document);
 	auto b = new QLabel ("Secondary screen");
 	b->setWindowTitle ("Secondary");
 	WindowPair windows{presentation, b};
