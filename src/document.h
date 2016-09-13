@@ -23,12 +23,11 @@
 #include <poppler-qt5.h>
 #include <vector>
 
-class Document : public QObject {
+class Document {
 	/* Represents an opened pdf document, and serve rendering requests.
 	 * TODO add sequence info (to next slide/prev slide, to slide N, ...)
 	 * TODO gather annotations to serve requests (pdfpc file, and text type anotation from poppler)
 	 */
-	Q_OBJECT
 
 private:
 	struct Page {
@@ -46,8 +45,7 @@ private:
 	int nb_slides_;
 
 public:
-	Document (const QString & filename, QObject * parent = nullptr)
-	    : QObject (parent), document_ (Poppler::Document::load (filename)) {
+	Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
 		// Check document has been opened
 		if (document_ == nullptr)
 			qFatal ("Unable to open document");

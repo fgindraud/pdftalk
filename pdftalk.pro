@@ -9,6 +9,7 @@ CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 QT += core widgets
 HEADERS += \
 	src/document.h \
+	src/presentation.h \
 	src/window_pair.h \
 	src/main.h
 SOURCES += \

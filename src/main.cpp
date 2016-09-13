@@ -14,8 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "window_pair.h"
 #include "main.h"
+#include "presentation.h"
+#include "window_pair.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -42,11 +43,20 @@ int main (int argc, char * argv[]) {
 		Q_UNREACHABLE ();
 	}
 
-	Document document (arguments[0]);
+	Presentation presentation (arguments[0]);
 
-	auto presentation = new PresentationWindow(document);
+	auto presentation_window = new PresentationWindow;
+	add_presentation_shortcuts_to_widget (presentation, presentation_window);
+	QObject::connect (presentation_window, &PresentationWindow::size_changed, &presentation,
+	                  &Presentation::presentation_window_size_changed);
+	QObject::connect (&presentation, &Presentation::new_presentation_pixmap, presentation_window,
+	                  &PresentationWindow::setPixmap);
+
 	auto b = new QLabel ("Secondary screen");
 	b->setWindowTitle ("Secondary");
-	WindowPair windows{presentation, b};
+	add_presentation_shortcuts_to_widget (presentation, b);
+	QObject::connect (&presentation, &Presentation::new_text_TEST, b, &QLabel::setText);
+
+	WindowPair windows{presentation_window, b};
 	return app.exec ();
 }

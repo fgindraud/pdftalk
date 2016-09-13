@@ -91,13 +91,19 @@ private slots:
 private:
 	void set_content_position (void) {
 		// De-parent contents
-		for (auto & c : contents_)
-			c->setParent (nullptr);
+		for (auto & c : contents_) {
+			if (c->parentWidget () != nullptr) {
+				disconnect (c, &QWidget::windowTitleChanged, c->parentWidget (), &QWidget::setWindowTitle);
+				c->setParent (nullptr);
+			}
+		}
 		// Re-set MainWindow widgets
 		for (int i = 0; i < nb_window; ++i) {
 			auto w = &windows_[(i + current_shift_) % nb_window];
-			w->setCentralWidget (contents_[i]);
-			w->setWindowTitle (contents_[i]->windowTitle ());
+			auto child = contents_[i];
+			w->setCentralWidget (child);
+			w->setWindowTitle (child->windowTitle ());
+			connect (child, &QWidget::windowTitleChanged, w, &QWidget::setWindowTitle);
 		}
 	}
 };

@@ -18,32 +18,20 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include "document.h"
-
 #include <QDebug>
 #include <QLabel>
 #include <QPalette>
 #include <QResizeEvent>
-#include <QShortcut>
 
 class PresentationWindow : public QLabel {
+	/* Presentation window.
+	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
+	 * setPixmap slot from QLabel is reused as it is.
+	 */
 	Q_OBJECT
 
-private:
-	const Document & document_;
-	int current_page_{0};
-
 public:
-	PresentationWindow (const Document & document) : document_ (document) {
-		{
-			auto sc = new QShortcut (QKeySequence (tr ("Right")), this);
-			connect (sc, &QShortcut::activated, this, &PresentationWindow::next_slide);
-		}
-		{
-			auto sc = new QShortcut (QKeySequence (tr ("Left")), this);
-			connect (sc, &QShortcut::activated, this, &PresentationWindow::prev_slide);
-		}
-
+	PresentationWindow (QWidget * parent = nullptr) : QLabel (parent) {
 		// Title
 		setWindowTitle (tr ("Presentation screen"));
 		// Center
@@ -55,23 +43,14 @@ public:
 		setAutoFillBackground (true);
 	}
 
-private slots:
-	void next_slide (void) {
-		current_page_ = std::min (current_page_ + 1, document_.nb_pages () - 1);
-		render ();
-	}
-	void prev_slide (void) {
-		current_page_ = std::max (current_page_ - 1, 0);
-		render ();
-	}
+signals:
+	void size_changed (QSize new_size);
 
 private:
 	void resizeEvent (QResizeEvent * event) Q_DECL_OVERRIDE {
 		QLabel::resizeEvent (event);
-		render ();
+		emit size_changed (size ());
 	}
-
-	void render (void) { setPixmap (document_.render (current_page_, size ())); }
 };
 
 #endif
