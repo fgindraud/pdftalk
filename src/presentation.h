@@ -20,8 +20,6 @@
 
 #include "document.h"
 
-#include <QDebug>
-
 #include <QBasicTimer>
 #include <QPixmap>
 #include <QShortcut>
@@ -168,13 +166,16 @@ inline void add_presentation_shortcuts_to_widget (Presentation & presentation, Q
 		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::go_to_next_page);
 	}
 	// 'g' for goto page prompt
+
 	// Timer control
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("P", "timer_toggle_pause key")), widget);
+		sc->setAutoRepeat (false);
 		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::timer_toggle_pause);
 	}
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("R", "timer_reset key")), widget);
+		sc->setAutoRepeat (false);
 		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::timer_reset);
 	}
 }

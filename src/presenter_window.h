@@ -18,12 +18,11 @@
 #ifndef PRESENTER_WINDOW_H
 #define PRESENTER_WINDOW_H
 
-#include <QDebug>
-
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPalette>
+#include <QVBoxLayout>
 #include <QWidget>
 
 class PresenterWindow : public QWidget {
@@ -34,10 +33,18 @@ class PresenterWindow : public QWidget {
 	Q_OBJECT
 
 private:
+	static constexpr qreal bottom_bar_text_point_size_factor = 2.0;
+
 	int nb_slides_;
 
-	QLabel * slide_number_label;
-	QLabel * timer_label;
+	QLabel * current_page_;
+	QLabel * previous_transition_page_;
+	QLabel * next_transition_page_;
+	QLabel * next_slide_page_;
+	QLabel * annotations_;
+
+	QLabel * slide_number_label_;
+	QLabel * timer_label_;
 
 public:
 	PresenterWindow (int nb_slides, QWidget * parent = nullptr)
@@ -49,27 +56,76 @@ public:
 		p.setColor (QPalette::Window, Qt::black);
 		p.setColor (QPalette::WindowText, Qt::white);
 		setPalette (p);
-		QFont f (font ());
-		f.setPointSize (20);
-		setFont (f);
 		setAutoFillBackground (true);
 
 		// Window structure
-		auto bottom_bar = new QHBoxLayout;
-		setLayout (bottom_bar);
+		auto window_structure = new QVBoxLayout;
+		setLayout (window_structure);
+		{
+			auto slide_panels = new QHBoxLayout;
+			window_structure->addLayout (slide_panels, 1);
+			{
+				// Current slide preview
+				auto current_slide_panel = new QVBoxLayout;
+				slide_panels->addLayout (current_slide_panel, 6); // 60%
 
-		slide_number_label = new QLabel;
-		slide_number_label->setAlignment (Qt::AlignCenter);
-		bottom_bar->addWidget (slide_number_label);
+				current_page_ = new QLabel;
+				current_slide_panel->addWidget (current_page_);
 
-		timer_label = new QLabel;
-		timer_label->setAlignment (Qt::AlignCenter);
-		bottom_bar->addWidget (timer_label);
+				auto transition_box = new QHBoxLayout;
+				current_slide_panel->addLayout (transition_box);
+				{
+					previous_transition_page_ = new QLabel;
+					transition_box->addWidget (previous_transition_page_);
+
+					transition_box->addStretch ();
+
+					next_transition_page_ = new QLabel;
+					transition_box->addWidget (next_transition_page_);
+				}
+
+				current_slide_panel->addStretch (); // Pad
+			}
+			{
+				// Next slide preview, and annotations
+				auto next_slide_and_comment_panel = new QVBoxLayout;
+				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40%
+
+				next_slide_page_ = new QLabel;
+				next_slide_and_comment_panel->addWidget (next_slide_page_);
+
+				annotations_ = new QLabel;
+				next_slide_and_comment_panel->addWidget (annotations_);
+
+				next_slide_and_comment_panel->addStretch (); // Pad
+			}
+		}
+		{
+			// Bottom bar with slide number and time
+			auto bottom_bar = new QHBoxLayout;
+			window_structure->addLayout (bottom_bar);
+			{
+				slide_number_label_ = new QLabel;
+				slide_number_label_->setAlignment (Qt::AlignCenter);
+				QFont f (slide_number_label_->font ());
+				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
+				slide_number_label_->setFont (f);
+				bottom_bar->addWidget (slide_number_label_);
+			}
+			{
+				timer_label_ = new QLabel;
+				timer_label_->setAlignment (Qt::AlignCenter);
+				QFont f (timer_label_->font ());
+				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
+				timer_label_->setFont (f);
+				bottom_bar->addWidget (timer_label_);
+			}
+		}
 	}
 
 public slots:
 	void slide_changed (int new_slide_number) {
-		slide_number_label->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
+		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
 	}
 
 	void time_changed (bool paused, QString new_time_text) {
@@ -77,10 +133,10 @@ public slots:
 		auto color = Qt::white;
 		if (paused)
 			color = Qt::cyan;
-		QPalette p (timer_label->palette ());
+		QPalette p (timer_label_->palette ());
 		p.setColor (QPalette::WindowText, color);
-		timer_label->setPalette (p);
-		timer_label->setText (new_time_text);
+		timer_label_->setPalette (p);
+		timer_label_->setText (new_time_text);
 	}
 };
 
