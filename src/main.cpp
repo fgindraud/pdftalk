@@ -16,6 +16,8 @@
  */
 #include "main.h"
 #include "presentation.h"
+#include "presentation_window.h"
+#include "presenter_window.h"
 #include "window_pair.h"
 
 #include <QApplication>
@@ -49,14 +51,14 @@ int main (int argc, char * argv[]) {
 	add_presentation_shortcuts_to_widget (presentation, presentation_window);
 	QObject::connect (presentation_window, &PresentationWindow::size_changed, &presentation,
 	                  &Presentation::presentation_window_size_changed);
-	QObject::connect (&presentation, &Presentation::new_presentation_pixmap, presentation_window,
+	QObject::connect (&presentation, &Presentation::presentation_pixmap_changed, presentation_window,
 	                  &PresentationWindow::setPixmap);
 
-	auto b = new QLabel ("Secondary screen");
-	b->setWindowTitle ("Secondary");
-	add_presentation_shortcuts_to_widget (presentation, b);
-	QObject::connect (&presentation, &Presentation::new_text_TEST, b, &QLabel::setText);
+	auto presenter_window = new PresenterWindow (presentation.nb_slides ());
+	add_presentation_shortcuts_to_widget (presentation, presenter_window);
+	QObject::connect (&presentation, &Presentation::slide_changed, presenter_window,
+	                  &PresenterWindow::slide_changed);
 
-	WindowPair windows{presentation_window, b};
+	WindowPair windows{presentation_window, presenter_window};
 	return app.exec ();
 }

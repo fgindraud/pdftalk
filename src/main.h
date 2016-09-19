@@ -18,39 +18,4 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <QDebug>
-#include <QLabel>
-#include <QPalette>
-#include <QResizeEvent>
-
-class PresentationWindow : public QLabel {
-	/* Presentation window.
-	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
-	 * setPixmap slot from QLabel is reused as it is.
-	 */
-	Q_OBJECT
-
-public:
-	PresentationWindow (QWidget * parent = nullptr) : QLabel (parent) {
-		// Title
-		setWindowTitle (tr ("Presentation screen"));
-		// Center
-		setAlignment (Qt::AlignCenter);
-		// Black background
-		QPalette p (palette ());
-		p.setColor (QPalette::Background, Qt::black);
-		setPalette (p);
-		setAutoFillBackground (true);
-	}
-
-signals:
-	void size_changed (QSize new_size);
-
-private:
-	void resizeEvent (QResizeEvent * event) Q_DECL_OVERRIDE {
-		QLabel::resizeEvent (event);
-		emit size_changed (size ());
-	}
-};
-
 #endif

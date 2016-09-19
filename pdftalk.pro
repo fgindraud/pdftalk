@@ -10,6 +10,8 @@ QT += core widgets
 HEADERS += \
 	src/document.h \
 	src/presentation.h \
+	src/presentation_window.h \
+	src/presenter_window.h \
 	src/window_pair.h \
 	src/main.h
 SOURCES += \
@@ -25,7 +27,7 @@ PKGCONFIG += poppler-qt5
 
 ### Misc information ###
 
-VERSION = 0.0.1
+VERSION = 0.0.2
 DEFINES += PDFTALK_VERSION=$${VERSION}
 
 QMAKE_TARGET_COMPANY = Francois Gindraud

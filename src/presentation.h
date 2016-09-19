@@ -32,18 +32,22 @@ class Presentation : public QObject {
 
 private:
 	const Document document_;
-	int current_page_{0};
+	int current_page_{0};   // Main iterator over document
+	int current_slide_{-1}; // Cached from document
 	QSize presentation_window_size_;
 	QPixmap current_pixmap_;
 
 public:
 	Presentation (const QString & filename) : document_ (filename) {}
+	int nb_slides (void) const { return document_.nb_slides (); }
 
 signals:
-	void new_presentation_pixmap (QPixmap pixmap);
-	void new_text_TEST (QString);
+	void presentation_pixmap_changed (QPixmap pixmap);
+
+	void slide_changed (int new_slide_number);
 
 public slots:
+	// Presentation browsing
 	void go_to_next_page (void) {
 		if (current_page_ + 1 < document_.nb_pages ()) {
 			current_page_++;
@@ -57,6 +61,7 @@ public slots:
 		}
 	}
 
+	// Interface changes
 	void presentation_window_size_changed (QSize new_size) {
 		if (new_size != presentation_window_size_) {
 			presentation_window_size_ = new_size;
@@ -67,10 +72,14 @@ public slots:
 private:
 	void render (void) {
 		current_pixmap_ = document_.render (current_page_, presentation_window_size_);
-		emit new_presentation_pixmap (current_pixmap_);
-		emit new_text_TEST (QString ("Slide %1/%2")
-		                        .arg (document_.slide_index_of_page (current_page_) + 1)
-		                        .arg (document_.nb_slides ()));
+		emit presentation_pixmap_changed (current_pixmap_);
+		{
+			auto slide = document_.slide_index_of_page (current_page_);
+			if (slide != current_slide_) {
+				current_slide_ = slide;
+				emit slide_changed (slide);
+			}
+		}
 	}
 };
 
@@ -87,6 +96,8 @@ inline void add_presentation_shortcuts_to_widget (Presentation & presentation, Q
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("Space", "next_page key")), widget);
 		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::go_to_next_page);
 	}
+	// 'g' for goto page prompt
+	// 'p' pause timer, 'r' reset timer
 }
 
 #endif
