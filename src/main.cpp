@@ -47,6 +47,7 @@ int main (int argc, char * argv[]) {
 
 	Presentation presentation (arguments[0]);
 
+	// Setup windows and connect to presentation controller object
 	auto presentation_window = new PresentationWindow;
 	add_presentation_shortcuts_to_widget (presentation, presentation_window);
 	QObject::connect (presentation_window, &PresentationWindow::size_changed, &presentation,
@@ -58,7 +59,12 @@ int main (int argc, char * argv[]) {
 	add_presentation_shortcuts_to_widget (presentation, presenter_window);
 	QObject::connect (&presentation, &Presentation::slide_changed, presenter_window,
 	                  &PresenterWindow::slide_changed);
+	QObject::connect (&presentation, &Presentation::time_changed, presenter_window,
+	                  &PresenterWindow::time_changed);
 
 	WindowPair windows{presentation_window, presenter_window};
+
+	// Initialise timer text in interface
+	presentation.timer_reset ();
 	return app.exec ();
 }

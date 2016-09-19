@@ -18,6 +18,8 @@
 #ifndef PRESENTER_WINDOW_H
 #define PRESENTER_WINDOW_H
 
+#include <QDebug>
+
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -42,9 +44,7 @@ public:
 	    : QWidget (parent), nb_slides_ (nb_slides) {
 		// Title
 		setWindowTitle (tr ("Presenter screen"));
-		// Center
-		// setAlignment (Qt::AlignCenter);
-		// Black background, white text, big bold font
+		// Black background, white text, big bold font for childrens
 		QPalette p (palette ());
 		p.setColor (QPalette::Window, Qt::black);
 		p.setColor (QPalette::WindowText, Qt::white);
@@ -62,7 +62,7 @@ public:
 		slide_number_label->setAlignment (Qt::AlignCenter);
 		bottom_bar->addWidget (slide_number_label);
 
-		timer_label = new QLabel ("blah");
+		timer_label = new QLabel;
 		timer_label->setAlignment (Qt::AlignCenter);
 		bottom_bar->addWidget (timer_label);
 	}
@@ -70,6 +70,17 @@ public:
 public slots:
 	void slide_changed (int new_slide_number) {
 		slide_number_label->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
+	}
+
+	void time_changed (bool paused, QString new_time_text) {
+		// Set text as colored if paused
+		auto color = Qt::white;
+		if (paused)
+			color = Qt::cyan;
+		QPalette p (timer_label->palette ());
+		p.setColor (QPalette::WindowText, color);
+		timer_label->setPalette (p);
+		timer_label->setText (new_time_text);
 	}
 };
 
