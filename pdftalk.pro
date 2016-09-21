@@ -9,6 +9,8 @@ CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 QT += core widgets
 HEADERS += \
 	src/document.h \
+	src/cache.h \
+	src/pixmap_label.h \
 	src/presentation.h \
 	src/presentation_window.h \
 	src/presenter_window.h \

@@ -57,6 +57,8 @@ int main (int argc, char * argv[]) {
 
 	auto presenter_window = new PresenterWindow (presentation.nb_slides ());
 	add_presentation_shortcuts_to_widget (presentation, presenter_window);
+	QObject::connect (&presentation, &Presentation::presentation_pixmap_changed, presenter_window,
+	                  &PresenterWindow::current_page_changed);
 	QObject::connect (&presentation, &Presentation::slide_changed, presenter_window,
 	                  &PresenterWindow::slide_changed);
 	QObject::connect (&presentation, &Presentation::time_changed, presenter_window,

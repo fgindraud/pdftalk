@@ -18,11 +18,11 @@
 #ifndef PRESENTATION_WINDOW_H
 #define PRESENTATION_WINDOW_H
 
-#include <QLabel>
-#include <QPalette>
-#include <QResizeEvent>
+#include "pixmap_label.h"
 
-class PresentationWindow : public QLabel {
+#include <QPalette>
+
+class PresentationWindow : public PixmapLabel {
 	/* Presentation window.
 	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
 	 * setPixmap slot from QLabel is reused as it is.
@@ -30,25 +30,14 @@ class PresentationWindow : public QLabel {
 	Q_OBJECT
 
 public:
-	PresentationWindow (QWidget * parent = nullptr) : QLabel (parent) {
+	explicit PresentationWindow (QWidget * parent = nullptr) : PixmapLabel (parent) {
 		// Title
 		setWindowTitle (tr ("Presentation screen"));
-		// Center
-		setAlignment (Qt::AlignCenter);
 		// Black background
 		QPalette p (palette ());
 		p.setColor (QPalette::Window, Qt::black);
 		setPalette (p);
 		setAutoFillBackground (true);
-	}
-
-signals:
-	void size_changed (QSize new_size);
-
-private:
-	void resizeEvent (QResizeEvent * event) Q_DECL_OVERRIDE {
-		QLabel::resizeEvent (event);
-		emit size_changed (size ());
 	}
 };
 

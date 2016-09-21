@@ -18,7 +18,7 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
-#include <QPixmap>
+#include <QImage>
 #include <memory> // unique_ptr
 #include <poppler-qt5.h>
 #include <vector>
@@ -45,7 +45,7 @@ private:
 	int nb_slides_;
 
 public:
-	Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
+	explicit Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
 		// Check document has been opened
 		if (document_ == nullptr)
 			qFatal ("Unable to open document");
@@ -82,7 +82,7 @@ public:
 	int nb_slides (void) const { return nb_slides_; }
 	int slide_index_of_page (int page_index) const { return pages_.at (page_index).slide_index; }
 
-	QPixmap render (int page_index, QSize box) const {
+	QImage render (int page_index, QSize box) const {
 		const auto & page = pages_.at (page_index).page;
 		const auto page_size_dots = page->pageSizeF ();
 		const qreal dpi =
@@ -91,7 +91,7 @@ public:
 		auto image = page->renderToImage (dpi, dpi);
 		if (image.isNull ())
 			qFatal ("Unable to render page");
-		return QPixmap::fromImage (std::move (image));
+		return image;
 	}
 };
 

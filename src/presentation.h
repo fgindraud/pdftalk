@@ -24,7 +24,6 @@
 #include <QPixmap>
 #include <QShortcut>
 #include <QTime>
-#include <QTimerEvent>
 class QWidget;
 
 class Timing : public QObject {
@@ -70,10 +69,7 @@ private:
 			total = total.addMSecs (last_resume_.elapsed ());
 		emit update (!timer_.isActive (), total.toString (tr ("HH:mm:ss")));
 	}
-	void timerEvent (QTimerEvent * event) Q_DECL_OVERRIDE {
-		event->accept ();
-		emit_update ();
-	}
+	void timerEvent (QTimerEvent *) Q_DECL_OVERRIDE { emit_update (); }
 	void start_or_resume_timing (void) {
 		timer_.start (1000, this); // FIXME can cause misticks if too small...
 		last_resume_.start ();
@@ -96,7 +92,7 @@ private:
 	QPixmap current_pixmap_;
 
 public:
-	Presentation (const QString & filename) : document_ (filename) {
+	explicit Presentation (const QString & filename) : document_ (filename) {
 		connect (&timer_, &Timing::update, this, &Presentation::time_changed);
 	}
 	int nb_slides (void) const { return document_.nb_slides (); }
@@ -139,7 +135,8 @@ public slots:
 
 private:
 	void render (void) {
-		current_pixmap_ = document_.render (current_page_, presentation_window_size_);
+		current_pixmap_ =
+		    QPixmap::fromImage (document_.render (current_page_, presentation_window_size_));
 		emit presentation_pixmap_changed (current_pixmap_);
 		{
 			auto slide = document_.slide_index_of_page (current_page_);

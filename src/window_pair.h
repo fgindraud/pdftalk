@@ -19,7 +19,6 @@
 #define WINDOW_PAIR_H
 
 #include <QApplication>
-#include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QKeySequence>
 #include <QMainWindow>
@@ -43,10 +42,7 @@ private slots:
 	void toogle_fullscreen (void) { setWindowState (windowState () ^ Qt::WindowFullScreen); }
 
 private:
-	void closeEvent (QCloseEvent * event) Q_DECL_OVERRIDE {
-		event->accept ();
-		QApplication::quit ();
-	}
+	void closeEvent (QCloseEvent *) Q_DECL_OVERRIDE { QApplication::quit (); }
 };
 
 class WindowPair : public QObject {
@@ -70,7 +66,7 @@ private:
 
 public:
 	template <typename... Args>
-	WindowPair (Args &&... args) : contents_{std::forward<Args> (args)...} {
+	explicit WindowPair (Args &&... args) : contents_{std::forward<Args> (args)...} {
 		for (auto & w : windows_) {
 			// Swap shortcut
 			auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);

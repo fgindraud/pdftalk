@@ -18,6 +18,8 @@
 #ifndef PRESENTER_WINDOW_H
 #define PRESENTER_WINDOW_H
 
+#include "pixmap_label.h"
+
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -37,17 +39,17 @@ private:
 
 	int nb_slides_;
 
-	QLabel * current_page_;
-	QLabel * previous_transition_page_;
-	QLabel * next_transition_page_;
-	QLabel * next_slide_page_;
+	PixmapLabel * current_page_;
+	PixmapLabel * previous_transition_page_;
+	PixmapLabel * next_transition_page_;
+	PixmapLabel * next_slide_page_;
 	QLabel * annotations_;
 
 	QLabel * slide_number_label_;
 	QLabel * timer_label_;
 
 public:
-	PresenterWindow (int nb_slides, QWidget * parent = nullptr)
+	explicit PresenterWindow (int nb_slides, QWidget * parent = nullptr)
 	    : QWidget (parent), nb_slides_ (nb_slides) {
 		// Title
 		setWindowTitle (tr ("Presenter screen"));
@@ -69,18 +71,18 @@ public:
 				auto current_slide_panel = new QVBoxLayout;
 				slide_panels->addLayout (current_slide_panel, 6); // 60%
 
-				current_page_ = new QLabel;
+				current_page_ = new PixmapLabel;
 				current_slide_panel->addWidget (current_page_);
 
 				auto transition_box = new QHBoxLayout;
 				current_slide_panel->addLayout (transition_box);
 				{
-					previous_transition_page_ = new QLabel;
+					previous_transition_page_ = new PixmapLabel;
 					transition_box->addWidget (previous_transition_page_);
 
 					transition_box->addStretch ();
 
-					next_transition_page_ = new QLabel;
+					next_transition_page_ = new PixmapLabel;
 					transition_box->addWidget (next_transition_page_);
 				}
 
@@ -91,7 +93,7 @@ public:
 				auto next_slide_and_comment_panel = new QVBoxLayout;
 				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40%
 
-				next_slide_page_ = new QLabel;
+				next_slide_page_ = new PixmapLabel;
 				next_slide_and_comment_panel->addWidget (next_slide_page_);
 
 				annotations_ = new QLabel;
@@ -124,10 +126,14 @@ public:
 	}
 
 public slots:
+	void current_page_changed (const QPixmap & new_pixmap) {
+		current_page_->setPixmap (new_pixmap);
+		next_slide_page_->setPixmap (new_pixmap);
+	}
+
 	void slide_changed (int new_slide_number) {
 		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
 	}
-
 	void time_changed (bool paused, QString new_time_text) {
 		// Set text as colored if paused
 		auto color = Qt::white;
