@@ -19,7 +19,6 @@
 #define WINDOW_PAIR_H
 
 #include <QApplication>
-#include <QHBoxLayout>
 #include <QKeySequence>
 #include <QMainWindow>
 #include <QShortcut>

@@ -82,7 +82,18 @@ public:
 	int nb_slides (void) const { return nb_slides_; }
 	int slide_index_of_page (int page_index) const { return pages_.at (page_index).slide_index; }
 
+	QSize render_size (int page_index, QSize box) const {
+		// Computes the maximum (and thus preferred) size we can render page in the given box
+		const auto & page = pages_.at (page_index).page;
+		const auto page_size_dots = page->pageSizeF ();
+		const qreal max_pix_dots_ratio =
+		    std::min (static_cast<qreal> (box.width ()) / page_size_dots.width (),
+		              static_cast<qreal> (box.height ()) / page_size_dots.height ());
+		return (page_size_dots * max_pix_dots_ratio).toSize ();
+	}
+
 	QImage render (int page_index, QSize box) const {
+		// Render the page in the box
 		const auto & page = pages_.at (page_index).page;
 		const auto page_size_dots = page->pageSizeF ();
 		const qreal dpi =

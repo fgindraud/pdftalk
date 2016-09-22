@@ -10,12 +10,9 @@ QT += core widgets
 HEADERS += \
 	src/document.h \
 	src/cache.h \
-	src/pixmap_label.h \
 	src/presentation.h \
-	src/presentation_window.h \
-	src/presenter_window.h \
-	src/window_pair.h \
-	src/main.h
+	src/windows.h \
+	src/window_pair.h
 SOURCES += \
 	src/main.cpp
 
