@@ -86,23 +86,25 @@ public:
 		// Computes the maximum (and thus preferred) size we can render page in the given box
 		const auto & page = pages_.at (page_index).page;
 		const auto page_size_dots = page->pageSizeF ();
-		const qreal max_pix_dots_ratio =
+		if (page_size_dots.width () == 0.0 || page_size_dots.height () == 0.0)
+			return QSize ();
+		const qreal pix_dots_ratio =
 		    std::min (static_cast<qreal> (box.width ()) / page_size_dots.width (),
 		              static_cast<qreal> (box.height ()) / page_size_dots.height ());
-		return (page_size_dots * max_pix_dots_ratio).toSize ();
+		return (page_size_dots * pix_dots_ratio).toSize ();
 	}
 
 	QImage render (int page_index, QSize box) const {
 		// Render the page in the box
 		const auto & page = pages_.at (page_index).page;
 		const auto page_size_dots = page->pageSizeF ();
-		const qreal dpi =
-		    std::min (static_cast<qreal> (box.width ()) / (page_size_dots.width () / 72.0),
-		              static_cast<qreal> (box.height ()) / (page_size_dots.height () / 72.0));
-		auto image = page->renderToImage (dpi, dpi);
-		if (image.isNull ())
-			qFatal ("Unable to render page");
-		return image;
+		if (page_size_dots.width () == 0.0 || page_size_dots.height () == 0.0)
+			return QImage ();
+		const qreal pix_dots_ratio =
+		    std::min (static_cast<qreal> (box.width ()) / page_size_dots.width (),
+		              static_cast<qreal> (box.height ()) / page_size_dots.height ());
+		const qreal dpi = pix_dots_ratio * 72.0;
+		return page->renderToImage (dpi, dpi);
 	}
 };
 

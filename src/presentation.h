@@ -18,6 +18,7 @@
 #ifndef PRESENTATION_H
 #define PRESENTATION_H
 
+#include "cache.h"
 #include "document.h"
 
 #include <QBasicTimer>
@@ -85,6 +86,7 @@ class Presentation : public QObject {
 
 private:
 	const Document document_;
+	RenderCache render_cache_;
 	int current_page_{0};   // Main iterator over document
 	int current_slide_{-1}; // Cached from document
 	QSize presentation_window_size_;
@@ -92,7 +94,8 @@ private:
 	QPixmap current_pixmap_;
 
 public:
-	explicit Presentation (const QString & filename) : document_ (filename) {
+	explicit Presentation (const QString & filename)
+	    : document_ (filename), render_cache_ (document_) {
 		connect (&timer_, &Timing::update, this, &Presentation::time_changed);
 	}
 	int nb_slides (void) const { return document_.nb_slides (); }

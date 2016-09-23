@@ -23,7 +23,9 @@
 #include <QByteArray>
 #include <QImage>
 #include <QPixmap>
+#include <QRunnable>
 #include <QSize>
+#include <QThreadPool>
 #include <utility>
 #include <vector>
 
@@ -45,12 +47,13 @@ struct CompressedRender {
 	QImage::Format image_format;
 };
 
-inline std::pair<CompressedRender, QImage> make_render (const Document & document, int page_index,
-                                                        const QSize & box) {
+inline std::pair<CompressedRender, QPixmap> make_render (const Document & document, int page_index,
+                                                         const QSize & box) {
 	QImage image = document.render (page_index, box);
 	auto compressed_data = qCompress (image.bits (), image.byteCount ());
-	return {CompressedRender{compressed_data, image.size (), image.bytesPerLine (), image.format ()},
-	        image};
+	auto compressed_render =
+	    CompressedRender{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
+	return {compressed_render, QPixmap::fromImage (std::move (image))};
 }
 
 inline void qbytearray_deleter (void * p) {
@@ -68,6 +71,32 @@ inline QPixmap make_pixmap_from_compressed_render (const CompressedRender & rend
 	return QPixmap::fromImage (std::move (image));
 }
 
+class RenderTask : public QObject, public QRunnable {
+	/* "Render a page" task for QThreadPool.
+	 */
+	Q_OBJECT
+
+private:
+	const Document & document_;
+	const int page_index_;
+	const QSize box_;
+	QObject * requester_;
+
+public:
+	RenderTask (QObject * requester, const Document & document, int page_index, QSize box)
+	    : document_ (document), page_index_ (page_index), box_ (box), requester_ (requester) {}
+
+signals:
+	void finished_rendering (QObject * requester, int page_index, CompressedRender compressed_render,
+	                         QPixmap pixmap);
+
+public:
+	void run (void) Q_DECL_OVERRIDE {
+		auto result = make_render (document_, page_index_, box_);
+		emit finished_rendering (requester_, page_index_, result.first, result.second);
+	}
+};
+
 class RenderCache : public QObject {
 	/* Stores CompressedRender objects, and uncompress them as needed.
 	 */
@@ -75,11 +104,61 @@ class RenderCache : public QObject {
 
 private:
 	const Document & document_;
-	std::vector<int> renders_by_page_;
+	std::vector<std::vector<CompressedRender>> renders_by_page_;
 
 public:
 	explicit RenderCache (const Document & document)
 	    : document_ (document), renders_by_page_ (document.nb_pages ()) {}
+
+signals:
+	void new_pixmap (QObject * requester, int page_index, QPixmap pixmap);
+
+public slots:
+	void request_page (QObject * requester, int page_index, QSize box) {
+		auto render_size = document_.render_size (page_index, box);
+		if (render_size.width () == 0 || render_size.height () == 0) {
+			// Early return if invalid size
+			emit new_pixmap (requester, page_index, QPixmap ());
+			return;
+		}
+		qDebug () << "Requested" << page_index << render_size;
+		// Determine cached render ith the closest size ratio to our request
+		const CompressedRender * best = nullptr;
+		qreal smallest_size_diff_ratio = 1.0;
+		for (const auto & compressed_render : renders_by_page_.at (page_index)) {
+			qreal size_diff_ratio = qAbs (static_cast<qreal> (compressed_render.size.width ()) /
+			                                  static_cast<qreal> (render_size.width ()) -
+			                              1.0);
+			if (size_diff_ratio < smallest_size_diff_ratio) {
+				best = &compressed_render;
+				smallest_size_diff_ratio = size_diff_ratio;
+			}
+			qDebug () << "Option" << compressed_render.size << size_diff_ratio;
+		}
+		/* If a perfect size render is found, return it.
+		 * If a good enough size (less than 20% difference) is found, return it and launch a render.
+		 * If no size is good, launch a render.
+		 */
+		if (best == nullptr || best->size != render_size) {
+			qDebug () << "Start rendering" << render_size;
+			// Launch render
+			auto task = new RenderTask (requester, document_, page_index, box);
+			connect (task, &RenderTask::finished_rendering, this, &RenderCache::render_finished);
+			QThreadPool::globalInstance ()->start (task);
+		}
+		if (best != nullptr && smallest_size_diff_ratio < 0.2) {
+			qDebug () << "Selected" << best->size << smallest_size_diff_ratio;
+			// Return saved
+			emit new_pixmap (requester, page_index, make_pixmap_from_compressed_render (*best));
+		}
+	}
+
+private slots:
+	void render_finished (QObject * requester, int page_index, CompressedRender compressed_render,
+	                      QPixmap pixmap) {
+		renders_by_page_.at (page_index).push_back (compressed_render);
+		emit new_pixmap (requester, page_index, pixmap);
+	}
 };
 
 #endif
