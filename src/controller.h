@@ -79,14 +79,14 @@ private:
 };
 
 class Controller : public QObject {
-	/* Manage a presentation state.
-	 * Coordinates the two views, and get renders and data from the Document.
+	/* Manage a presentation state (which slide is currently viewed).
+	 * Sends page updates to slide viewers depending on user input.
 	 */
 	Q_OBJECT
 
 private:
 	const Document & document_;
-	PageIndex current_page_{0}; // Main iterator over document
+	int current_page_{0}; // Main iterator over document
 	Timing timer_;
 
 public:
@@ -95,12 +95,12 @@ public:
 	}
 
 signals:
-	void current_page_changed (PageIndex new_page);
-	void next_slide_page_changed (PageIndex new_page);
-	void next_transition_page_changed (PageIndex new_page);
-	void previous_transition_page_changed (PageIndex new_page);
+	void current_page_changed (const PageInfo * new_page);
+	void next_slide_first_page_changed (const PageInfo * new_page);
+	void next_transition_page_changed (const PageInfo * new_page);
+	void previous_transition_page_changed (const PageInfo * new_page);
 
-	void slide_changed (SlideIndex new_slide_number);
+	void slide_changed (int new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
 
 public slots:
@@ -127,9 +127,12 @@ public slots:
 
 private:
 	void update_views (void) {
-		emit current_page_changed (current_page_);
-		emit slide_changed (document_.slide_index_of_page (current_page_));
-		// TODO add other signals
+		const auto & page = document_.page (current_page_);
+		emit current_page_changed (&page);
+		emit next_slide_first_page_changed (page.next_slide_first_page ());
+		emit next_transition_page_changed (page.next_transition_page ());
+		emit previous_transition_page_changed (page.previous_transition_page ());
+		emit slide_changed (page.slide_index ());
 	}
 };
 

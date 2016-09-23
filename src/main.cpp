@@ -16,8 +16,8 @@
  */
 #include "cache.h"
 #include "controller.h"
+#include "views.h"
 #include "window_pair.h"
-#include "windows.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -51,35 +51,40 @@ int main (int argc, char * argv[]) {
 	RenderCache cache (document);
 
 	// Setup windows
-	auto presentation_window = new PresentationWindow;
-	auto presenter_window = new PresenterWindow (document.nb_slides ());
-	add_shortcuts_to_widget (control, presentation_window);
-	add_shortcuts_to_widget (control, presenter_window);
+	auto presentation_view = new PresentationView;
+	auto presenter_view = new PresenterView (document.nb_slides ());
+	add_shortcuts_to_widget (control, presentation_view);
+	add_shortcuts_to_widget (control, presenter_view);
 
 	// Link viewers to controller
-	QObject::connect (&control, &Controller::slide_changed, presenter_window,
-	                  &PresenterWindow::slide_changed);
-	QObject::connect (&control, &Controller::time_changed, presenter_window,
-	                  &PresenterWindow::time_changed);
+	QObject::connect (&control, &Controller::slide_changed, presenter_view,
+	                  &PresenterView::slide_changed);
+	QObject::connect (&control, &Controller::time_changed, presenter_view,
+	                  &PresenterView::time_changed);
 
-	QObject::connect (&control, &Controller::current_page_changed, presentation_window,
-	                  &SlideViewer::change_page);
+	QObject::connect (&control, &Controller::current_page_changed, presentation_view,
+	                  &PageViewer::change_page);
 	QObject::connect (&control, &Controller::current_page_changed,
-	                  presenter_window->current_page_viewer (), &SlideViewer::change_page);
-	// TODO missing viewers
+	                  presenter_view->current_page_viewer (), &PageViewer::change_page);
+	QObject::connect (&control, &Controller::next_slide_first_page_changed,
+	                  presenter_view->next_slide_first_page_viewer (), &PageViewer::change_page);
+	QObject::connect (&control, &Controller::next_transition_page_changed,
+	                  presenter_view->next_transition_page_viewer (), &PageViewer::change_page);
+	QObject::connect (&control, &Controller::previous_transition_page_changed,
+	                  presenter_view->previous_transition_page_viewer (), &PageViewer::change_page);
 
 	// Link viewers to caching system
-	SlideViewer * viewers[] = {presentation_window, presenter_window->current_page_viewer (),
-	                           presenter_window->next_slide_page_viewer (),
-	                           presenter_window->next_transition_page_viewer (),
-	                           presenter_window->previous_transition_page_viewer ()};
+	PageViewer * viewers[] = {presentation_view, presenter_view->current_page_viewer (),
+	                          presenter_view->next_slide_first_page_viewer (),
+	                          presenter_view->next_transition_page_viewer (),
+	                          presenter_view->previous_transition_page_viewer ()};
 	for (auto v : viewers) {
-		QObject::connect (v, &SlideViewer::request_pixmap, &cache, &RenderCache::request_page);
-		QObject::connect (&cache, &RenderCache::new_pixmap, v, &SlideViewer::receive_pixmap);
+		QObject::connect (v, &PageViewer::request_pixmap, &cache, &RenderCache::request_page);
+		QObject::connect (&cache, &RenderCache::new_pixmap, v, &PageViewer::receive_pixmap);
 	}
 
 	// Setup window swapping system
-	WindowPair windows{presentation_window, presenter_window};
+	WindowPair windows{presentation_view, presenter_view};
 
 	// Initialise timer text in interface
 	control.timer_reset (); // TODO reset controller to give first page orders

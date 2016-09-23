@@ -50,7 +50,7 @@ Q_DECLARE_METATYPE (CompressedRender);
 
 inline std::pair<CompressedRender, QPixmap> make_render (const Document & document, int page_index,
                                                          const QSize & box) {
-	QImage image = document.render (page_index, box);
+	QImage image = document.page (page_index).render (box);
 	auto compressed_data = qCompress (image.bits (), image.byteCount ());
 	auto compressed_render =
 	    CompressedRender{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
@@ -58,7 +58,6 @@ inline std::pair<CompressedRender, QPixmap> make_render (const Document & docume
 }
 
 inline void qbytearray_deleter (void * p) {
-	qDebug () << "Deleting QByteArray" << p;
 	delete static_cast<QByteArray *> (p);
 }
 inline QPixmap make_pixmap_from_compressed_render (const CompressedRender & render) {
@@ -112,11 +111,11 @@ public:
 	    : document_ (document), renders_by_page_ (document.nb_pages ()) {}
 
 signals:
-	void new_pixmap (const QObject * requester, PageIndex page_index, QPixmap pixmap);
+	void new_pixmap (const QObject * requester, int page_index, QPixmap pixmap);
 
 public slots:
-	void request_page (const QObject * requester, PageIndex page_index, QSize box) {
-		auto render_size = document_.render_size (page_index, box);
+	void request_page (const QObject * requester, int page_index, QSize box) {
+		auto render_size = document_.page (page_index).render_size (box);
 		if (render_size.isEmpty ()) {
 			// Early return if invalid size
 			emit new_pixmap (requester, page_index, QPixmap ());

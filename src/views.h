@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef WINDOWS_H
-#define WINDOWS_H
+#ifndef VIEWS_H
+#define VIEWS_H
 
 #include "controller.h"
 #include "document.h"
@@ -26,10 +26,13 @@
 #include <QLabel>
 #include <QPalette>
 #include <QPixmap>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 #include <QWidget>
 
-class SlideViewer : public QLabel {
+#include <QDebug>
+
+class PageViewer : public QLabel {
 	/* Show a pdf page.
 	 * Label that holds a pixmap and resizes it while keeping aspect ratio, at the center.
 	 * The page shown is selected by asking for a PageIndex.
@@ -38,63 +41,54 @@ class SlideViewer : public QLabel {
 	Q_OBJECT
 
 private:
-	PageIndex page_index_{-1};
+	const PageInfo * page_{nullptr};
 
 public:
-	explicit SlideViewer (QWidget * parent = nullptr) : QLabel (parent) {
+	explicit PageViewer (QWidget * parent = nullptr) : QLabel (parent) {
 		setScaledContents (false);
 		setAlignment (Qt::AlignCenter);
+		setMinimumSize (1, 1); // To prevent nil QLabel when no pixmap is available
+		QSizePolicy policy{QSizePolicy::Ignored, QSizePolicy::Ignored};
+		policy.setHeightForWidth (true);
+		setSizePolicy (policy);
 	}
 
-	QSize minimumSizeHint (void) const Q_DECL_OVERRIDE { return {1, 1}; }
 	int heightForWidth (int w) const Q_DECL_OVERRIDE {
-		if (pixmap () == nullptr || pixmap ()->isNull ()) {
+		if (page_ == nullptr) {
 			return QLabel::heightForWidth (w);
 		} else {
-			return static_cast<qreal> (pixmap ()->height ()) * static_cast<qreal> (w) /
-			       static_cast<qreal> (pixmap ()->width ());
+			return page_->height_for_width_ratio () * w;
 		}
 	}
-	QSize sizeHint (void) const Q_DECL_OVERRIDE {
-		return QSize (width (), heightForWidth (width ()));
-	}
 
-	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE {
-		clear_pixmap ();
-		if (page_index_ >= 0)
-			emit request_pixmap (this, page_index_, size ());
-	}
+	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (); }
 
 signals:
-	void request_pixmap (const QObject * requester, PageIndex page_index, QSize box);
+	void request_pixmap (const QObject * requester, int page_index, QSize box);
 
 public slots:
-	void change_page (PageIndex new_page) {
-		if (new_page != page_index_) {
-			clear_pixmap ();
-			page_index_ = new_page;
-			if (page_index_ >= 0)
-				emit request_pixmap (this, page_index_, size ());
+	void change_page (const PageInfo * new_page) {
+		if (new_page != page_) {
+			page_ = new_page;
+			update_label ();
 		}
 	}
-	void receive_pixmap (const QObject * requester, PageIndex page_index, QPixmap pixmap) {
-		// Only set as pixmap if we actually requested it.
-		// We may received answers to others requests, and stale answers.
-		if (requester == static_cast<const QObject *> (this) && page_index == page_index_)
-			update_pixmap (pixmap);
-	}
+	void receive_pixmap (const QObject * requester, int page_index, QPixmap pixmap) {}
 
 private:
-	void clear_pixmap (void) { QLabel::setPixmap (QPixmap ()); }
-	void update_pixmap (const QPixmap & new_pixmap) {
-		QPixmap to_show = new_pixmap;
-		if (!to_show.isNull () && size () != to_show.size ())
-			to_show = to_show.scaled (size (), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		setPixmap (to_show);
+	void update_label (void) {
+		qDebug () << objectName () << size ();
+		static constexpr int pixmap_size_limit_px = 10;
+		if (page_ == nullptr || width () < pixmap_size_limit_px || height () < pixmap_size_limit_px) {
+			clear ();
+		} else {
+			setPixmap (QPixmap::fromImage (page_->render (size ())));
+		}
 	}
+	//		to_show = to_show.scaled (size (), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 };
 
-class PresentationWindow : public SlideViewer {
+class PresentationView : public PageViewer {
 	/* Presentation window.
 	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
 	 * setPixmap slot from QLabel is reused as it is.
@@ -102,7 +96,7 @@ class PresentationWindow : public SlideViewer {
 	Q_OBJECT
 
 public:
-	explicit PresentationWindow (QWidget * parent = nullptr) : SlideViewer (parent) {
+	explicit PresentationView (QWidget * parent = nullptr) : PageViewer (parent) {
 		// Title
 		setWindowTitle (tr ("Presentation screen"));
 		// Black background
@@ -110,10 +104,12 @@ public:
 		p.setColor (QPalette::Window, Qt::black);
 		setPalette (p);
 		setAutoFillBackground (true);
+		// Debug identification
+		setObjectName ("presentation/current");
 	}
 };
 
-class PresenterWindow : public QWidget {
+class PresenterView : public QWidget {
 	/* Presentation window.
 	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
 	 * setPixmap slot from QLabel is reused as it is.
@@ -123,19 +119,19 @@ class PresenterWindow : public QWidget {
 private:
 	static constexpr qreal bottom_bar_text_point_size_factor = 2.0;
 
-	const SlideIndex nb_slides_;
+	const int nb_slides_;
 
-	SlideViewer * current_page_;
-	SlideViewer * previous_transition_page_;
-	SlideViewer * next_transition_page_;
-	SlideViewer * next_slide_page_;
+	PageViewer * current_page_;
+	PageViewer * previous_transition_page_;
+	PageViewer * next_transition_page_;
+	PageViewer * next_slide_first_page_;
 	QLabel * annotations_;
 
 	QLabel * slide_number_label_;
 	QLabel * timer_label_;
 
 public:
-	explicit PresenterWindow (SlideIndex nb_slides, QWidget * parent = nullptr)
+	explicit PresenterView (int nb_slides, QWidget * parent = nullptr)
 	    : QWidget (parent), nb_slides_ (nb_slides) {
 		// Title
 		setWindowTitle (tr ("Presenter screen"));
@@ -146,7 +142,7 @@ public:
 		setPalette (p);
 		setAutoFillBackground (true);
 
-		// Window structure
+		// View structure
 		auto window_structure = new QVBoxLayout;
 		setLayout (window_structure);
 		{
@@ -157,18 +153,21 @@ public:
 				auto current_slide_panel = new QVBoxLayout;
 				slide_panels->addLayout (current_slide_panel, 6); // 60%
 
-				current_page_ = new SlideViewer;
-				current_slide_panel->addWidget (current_page_);
+				current_page_ = new PageViewer;
+				current_page_->setObjectName ("presenter/current");
+				current_slide_panel->addWidget (current_page_, 8);
 
 				auto transition_box = new QHBoxLayout;
-				current_slide_panel->addLayout (transition_box);
+				current_slide_panel->addLayout (transition_box, 2);
 				{
-					previous_transition_page_ = new SlideViewer;
+					previous_transition_page_ = new PageViewer;
+					previous_transition_page_->setObjectName ("presenter/prev_transition");
 					transition_box->addWidget (previous_transition_page_);
 
 					transition_box->addStretch ();
 
-					next_transition_page_ = new SlideViewer;
+					next_transition_page_ = new PageViewer;
+					next_transition_page_->setObjectName ("presenter/next_transition");
 					transition_box->addWidget (next_transition_page_);
 				}
 
@@ -179,8 +178,9 @@ public:
 				auto next_slide_and_comment_panel = new QVBoxLayout;
 				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40%
 
-				next_slide_page_ = new SlideViewer;
-				next_slide_and_comment_panel->addWidget (next_slide_page_);
+				next_slide_first_page_ = new PageViewer;
+				next_slide_first_page_->setObjectName ("presenter/next_slide");
+				next_slide_and_comment_panel->addWidget (next_slide_first_page_);
 
 				annotations_ = new QLabel;
 				next_slide_and_comment_panel->addWidget (annotations_);
@@ -211,10 +211,10 @@ public:
 		}
 	}
 
-	SlideViewer * current_page_viewer (void) { return current_page_; }
-	SlideViewer * next_slide_page_viewer (void) { return next_slide_page_; }
-	SlideViewer * next_transition_page_viewer (void) { return next_transition_page_; }
-	SlideViewer * previous_transition_page_viewer (void) { return previous_transition_page_; }
+	PageViewer * current_page_viewer (void) { return current_page_; }
+	PageViewer * next_slide_first_page_viewer (void) { return next_slide_first_page_; }
+	PageViewer * next_transition_page_viewer (void) { return next_transition_page_; }
+	PageViewer * previous_transition_page_viewer (void) { return previous_transition_page_; }
 
 public slots:
 

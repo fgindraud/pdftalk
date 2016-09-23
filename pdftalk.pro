@@ -11,7 +11,7 @@ HEADERS += \
 	src/document.h \
 	src/cache.h \
 	src/controller.h \
-	src/windows.h \
+	src/views.h \
 	src/window_pair.h
 SOURCES += \
 	src/main.cpp
