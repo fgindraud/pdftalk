@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef PRESENTATION_H
-#define PRESENTATION_H
+#ifndef CONTROLLER_H
+#define CONTROLLER_H
 
 #include "cache.h"
 #include "document.h"
@@ -78,32 +78,29 @@ private:
 	}
 };
 
-class Presentation : public QObject {
+class Controller : public QObject {
 	/* Manage a presentation state.
 	 * Coordinates the two views, and get renders and data from the Document.
 	 */
 	Q_OBJECT
 
 private:
-	const Document document_;
-	RenderCache render_cache_;
-	int current_page_{0};   // Main iterator over document
-	int current_slide_{-1}; // Cached from document
-	QSize presentation_window_size_;
+	const Document & document_;
+	PageIndex current_page_{0}; // Main iterator over document
 	Timing timer_;
-	QPixmap current_pixmap_;
 
 public:
-	explicit Presentation (const QString & filename)
-	    : document_ (filename), render_cache_ (document_) {
-		connect (&timer_, &Timing::update, this, &Presentation::time_changed);
+	explicit Controller (const Document & document) : document_ (document) {
+		connect (&timer_, &Timing::update, this, &Controller::time_changed);
 	}
-	int nb_slides (void) const { return document_.nb_slides (); }
 
 signals:
-	void presentation_pixmap_changed (QPixmap pixmap);
+	void current_page_changed (PageIndex new_page);
+	void next_slide_page_changed (PageIndex new_page);
+	void next_transition_page_changed (PageIndex new_page);
+	void previous_transition_page_changed (PageIndex new_page);
 
-	void slide_changed (int new_slide_number);
+	void slide_changed (SlideIndex new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
 
 public slots:
@@ -112,14 +109,14 @@ public slots:
 		if (current_page_ + 1 < document_.nb_pages ()) {
 			current_page_++;
 			timer_start ();
-			render ();
+			update_views ();
 		}
 	}
-	void go_to_prev_page (void) {
+	void go_to_previous_page (void) {
 		if (current_page_ > 0) {
 			current_page_--;
 			timer_start ();
-			render ();
+			update_views ();
 		}
 	}
 
@@ -128,42 +125,27 @@ public slots:
 	void timer_toggle_pause (void) { timer_.toggle_pause (); }
 	void timer_reset (void) { timer_.reset (); }
 
-	// Interface changes
-	void presentation_window_size_changed (QSize new_size) {
-		if (new_size != presentation_window_size_) {
-			presentation_window_size_ = new_size;
-			render ();
-		}
-	}
-
 private:
-	void render (void) {
-		current_pixmap_ =
-		    QPixmap::fromImage (document_.render (current_page_, presentation_window_size_));
-		emit presentation_pixmap_changed (current_pixmap_);
-		{
-			auto slide = document_.slide_index_of_page (current_page_);
-			if (slide != current_slide_) {
-				current_slide_ = slide;
-				emit slide_changed (slide);
-			}
-		}
+	void update_views (void) {
+		emit current_page_changed (current_page_);
+		emit slide_changed (document_.slide_index_of_page (current_page_));
+		// TODO add other signals
 	}
 };
 
-inline void add_presentation_shortcuts_to_widget (Presentation & presentation, QWidget * widget) {
+inline void add_shortcuts_to_widget (Controller & c, QWidget * widget) {
 	// Page navigation
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("Right", "next_page key")), widget);
-		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::go_to_next_page);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_next_page);
 	}
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("Left", "prev_page key")), widget);
-		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::go_to_prev_page);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_previous_page);
 	}
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("Space", "next_page key")), widget);
-		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::go_to_next_page);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_next_page);
 	}
 	// 'g' for goto page prompt
 
@@ -171,12 +153,12 @@ inline void add_presentation_shortcuts_to_widget (Presentation & presentation, Q
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("P", "timer_toggle_pause key")), widget);
 		sc->setAutoRepeat (false);
-		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::timer_toggle_pause);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::timer_toggle_pause);
 	}
 	{
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("R", "timer_reset key")), widget);
 		sc->setAutoRepeat (false);
-		QObject::connect (sc, &QShortcut::activated, &presentation, &Presentation::timer_reset);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::timer_reset);
 	}
 }
 

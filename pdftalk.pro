@@ -10,7 +10,7 @@ QT += core widgets
 HEADERS += \
 	src/document.h \
 	src/cache.h \
-	src/presentation.h \
+	src/controller.h \
 	src/windows.h \
 	src/window_pair.h
 SOURCES += \

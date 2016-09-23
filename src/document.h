@@ -23,6 +23,9 @@
 #include <poppler-qt5.h>
 #include <vector>
 
+using PageIndex = int;  // [0, NbPages[, -1 == no page
+using SlideIndex = int; // [0, NbSlides[
+
 class Document {
 	/* Represents an opened pdf document, and serve rendering requests.
 	 * TODO add sequence info (to next slide/prev slide, to slide N, ...)
@@ -36,13 +39,13 @@ private:
 		 * slide_index indicates the slide number as defined by beamer.
 		 */
 		std::unique_ptr<const Poppler::Page> page;
-		int slide_index;
+		SlideIndex slide_index;
 		// TODO add index of page inside slide transition ?
-		Page (Poppler::Page * page, int slide_index) : page (page), slide_index (slide_index) {}
+		Page (Poppler::Page * page, SlideIndex slide_index) : page (page), slide_index (slide_index) {}
 	};
 	std::unique_ptr<Poppler::Document> document_;
 	std::vector<Page> pages_; // size() method gives the total number of pages
-	int nb_slides_;
+	SlideIndex nb_slides_;
 
 public:
 	explicit Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
@@ -58,13 +61,13 @@ public:
 
 		// Create page objects
 		// Count slides by incrementing when label change
-		int nb_pages = document_->numPages ();
+		auto nb_pages = document_->numPages ();
 		if (nb_pages <= 0)
 			qFatal ("No pages in the document");
 		pages_.reserve (nb_pages);
-		int current_slide_index = -1;
+		auto current_slide_index = SlideIndex (-1);
 		QString current_slide_label;
-		for (int i = 0; i < nb_pages; ++i) {
+		for (auto i = 0; i < nb_pages; ++i) {
 			auto p = document_->page (i);
 			if (p == nullptr)
 				qFatal ("Unable to load page");
@@ -78,15 +81,19 @@ public:
 		nb_slides_ = current_slide_index + 1;
 	}
 
-	int nb_pages (void) const { return pages_.size (); }
-	int nb_slides (void) const { return nb_slides_; }
-	int slide_index_of_page (int page_index) const { return pages_.at (page_index).slide_index; }
+	PageIndex nb_pages (void) const { return pages_.size (); }
+	SlideIndex nb_slides (void) const { return nb_slides_; }
 
-	QSize render_size (int page_index, QSize box) const {
+	SlideIndex slide_index_of_page (PageIndex page_index) const {
+		return pages_.at (page_index).slide_index;
+	}
+	// TODO transition, slide first pages
+
+	QSize render_size (PageIndex index, QSize box) const {
 		// Computes the maximum (and thus preferred) size we can render page in the given box
-		const auto & page = pages_.at (page_index).page;
+		const auto & page = pages_.at (index).page;
 		const auto page_size_dots = page->pageSizeF ();
-		if (page_size_dots.width () == 0.0 || page_size_dots.height () == 0.0)
+		if (page_size_dots.isEmpty ())
 			return QSize ();
 		const qreal pix_dots_ratio =
 		    std::min (static_cast<qreal> (box.width ()) / page_size_dots.width (),
@@ -94,11 +101,11 @@ public:
 		return (page_size_dots * pix_dots_ratio).toSize ();
 	}
 
-	QImage render (int page_index, QSize box) const {
+	QImage render (PageIndex index, QSize box) const {
 		// Render the page in the box
-		const auto & page = pages_.at (page_index).page;
+		const auto & page = pages_.at (index).page;
 		const auto page_size_dots = page->pageSizeF ();
-		if (page_size_dots.width () == 0.0 || page_size_dots.height () == 0.0)
+		if (page_size_dots.isEmpty ())
 			return QImage ();
 		const qreal pix_dots_ratio =
 		    std::min (static_cast<qreal> (box.width ()) / page_size_dots.width (),

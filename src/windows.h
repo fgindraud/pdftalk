@@ -18,6 +18,9 @@
 #ifndef WINDOWS_H
 #define WINDOWS_H
 
+#include "controller.h"
+#include "document.h"
+
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -27,13 +30,15 @@
 #include <QWidget>
 
 class SlideViewer : public QLabel {
-	/* Label that holds a pixmap and resizes it while keeping aspect ratio, at the center.
-	 * It also sends a signal when resized.
+	/* Show a pdf page.
+	 * Label that holds a pixmap and resizes it while keeping aspect ratio, at the center.
+	 * The page shown is selected by asking for a PageIndex.
+	 * Then a request to the rendering cache is emitted, and shown on answer.
 	 */
 	Q_OBJECT
 
 private:
-	QPixmap pixmap_; // Origin sized pixmap
+	PageIndex page_index_{-1};
 
 public:
 	explicit SlideViewer (QWidget * parent = nullptr) : QLabel (parent) {
@@ -43,11 +48,11 @@ public:
 
 	QSize minimumSizeHint (void) const Q_DECL_OVERRIDE { return {1, 1}; }
 	int heightForWidth (int w) const Q_DECL_OVERRIDE {
-		if (pixmap_.isNull ()) {
+		if (pixmap () == nullptr || pixmap ()->isNull ()) {
 			return QLabel::heightForWidth (w);
 		} else {
-			return static_cast<qreal> (pixmap_.height ()) * static_cast<qreal> (w) /
-			       static_cast<qreal> (pixmap_.width ());
+			return static_cast<qreal> (pixmap ()->height ()) * static_cast<qreal> (w) /
+			       static_cast<qreal> (pixmap ()->width ());
 		}
 	}
 	QSize sizeHint (void) const Q_DECL_OVERRIDE {
@@ -55,26 +60,37 @@ public:
 	}
 
 	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE {
-		QLabel::setPixmap (make_scaled_pixmap ());
-		emit size_changed (size ());
+		clear_pixmap ();
+		if (page_index_ >= 0)
+			emit request_pixmap (this, page_index_, size ());
 	}
 
 signals:
-	void size_changed (QSize new_size);
+	void request_pixmap (const QObject * requester, PageIndex page_index, QSize box);
 
 public slots:
-	void setPixmap (const QPixmap & pixmap) {
-		pixmap_ = pixmap;
-		QLabel::setPixmap (make_scaled_pixmap ());
+	void change_page (PageIndex new_page) {
+		if (new_page != page_index_) {
+			clear_pixmap ();
+			page_index_ = new_page;
+			if (page_index_ >= 0)
+				emit request_pixmap (this, page_index_, size ());
+		}
+	}
+	void receive_pixmap (const QObject * requester, PageIndex page_index, QPixmap pixmap) {
+		// Only set as pixmap if we actually requested it.
+		// We may received answers to others requests, and stale answers.
+		if (requester == static_cast<const QObject *> (this) && page_index == page_index_)
+			update_pixmap (pixmap);
 	}
 
 private:
-	QPixmap make_scaled_pixmap (void) const {
-		if (pixmap_.isNull () || size () == pixmap_.size ()) {
-			return pixmap_;
-		} else {
-			return pixmap_.scaled (size (), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-		}
+	void clear_pixmap (void) { QLabel::setPixmap (QPixmap ()); }
+	void update_pixmap (const QPixmap & new_pixmap) {
+		QPixmap to_show = new_pixmap;
+		if (!to_show.isNull () && size () != to_show.size ())
+			to_show = to_show.scaled (size (), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+		setPixmap (to_show);
 	}
 };
 
@@ -107,7 +123,7 @@ class PresenterWindow : public QWidget {
 private:
 	static constexpr qreal bottom_bar_text_point_size_factor = 2.0;
 
-	int nb_slides_;
+	const SlideIndex nb_slides_;
 
 	SlideViewer * current_page_;
 	SlideViewer * previous_transition_page_;
@@ -119,7 +135,7 @@ private:
 	QLabel * timer_label_;
 
 public:
-	explicit PresenterWindow (int nb_slides, QWidget * parent = nullptr)
+	explicit PresenterWindow (SlideIndex nb_slides, QWidget * parent = nullptr)
 	    : QWidget (parent), nb_slides_ (nb_slides) {
 		// Title
 		setWindowTitle (tr ("Presenter screen"));
@@ -195,11 +211,12 @@ public:
 		}
 	}
 
+	SlideViewer * current_page_viewer (void) { return current_page_; }
+	SlideViewer * next_slide_page_viewer (void) { return next_slide_page_; }
+	SlideViewer * next_transition_page_viewer (void) { return next_transition_page_; }
+	SlideViewer * previous_transition_page_viewer (void) { return previous_transition_page_; }
+
 public slots:
-	void current_page_changed (const QPixmap & new_pixmap) {
-		current_page_->setPixmap (new_pixmap);
-		next_slide_page_->setPixmap (new_pixmap);
-	}
 
 	void slide_changed (int new_slide_number) {
 		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
