@@ -19,6 +19,23 @@ make
 Requires Qt >= 5.2, c++11 compiler support, and poppler (including Qt5 bindings).
 Details about dependencies can be found in the `build/*/requirement.sh` files.
 
+Usage
+-----
+
+Starting the presentation tool is simple (no options for now):
+```
+pdftalk <pdf_document>
+```
+
+It generates 2 windows, one for the spectators with the current slide, and one for the presenter with neighbouring slides, a timer, and slide numbering.
+The windows can be placed on the two screens (use 's' key to swap them), and can be made fullscreen ('f' key).
+Navigation is obvious ('→' '←' 'space' keys).
+The timer can be paused/resumed with 'p', and resetted with 'r'.
+
+To generate text annotation for the presenter window, for now:
+* generate a pdfpc text file with notes (manually or using something like [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes))
+* let beamer insert text annotations (HOW ?)
+
 Status
 ------
 
@@ -26,11 +43,20 @@ This is only a partial prototype...
 
 Todo:
 * PDF rendering
-	* Basic on demand one for now
 	* Add prerendering, threading, etc...
-* Support for durations
 * Showing comments & such
 * Auto spread windows on monitors
+
+Maybe Todo:
+* Support for durations
+* Link actions
+* Support for Poppler Rotation flags (don't know when it matters)
+* Disable screensaver
+
+Unlikely Todo:
+* Movies
+* Transitions / animations
+* Clean support of notes
 
 License
 -------
