@@ -58,9 +58,11 @@ int main (int argc, char * argv[]) {
 
 	// Link viewers to controller
 	QObject::connect (&control, &Controller::slide_changed, presenter_view,
-	                  &PresenterView::slide_changed);
+	                  &PresenterView::change_slide);
 	QObject::connect (&control, &Controller::time_changed, presenter_view,
-	                  &PresenterView::time_changed);
+	                  &PresenterView::change_time);
+	QObject::connect (&control, &Controller::annotations_changed, presenter_view,
+	                  &PresenterView::change_annotations);
 
 	QObject::connect (&control, &Controller::current_page_changed, presentation_view,
 	                  &PageViewer::change_page);

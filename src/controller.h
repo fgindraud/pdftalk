@@ -102,6 +102,7 @@ signals:
 
 	void slide_changed (int new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
+	void annotations_changed (QString new_annotations);
 
 public slots:
 	// Page navigation
@@ -133,6 +134,8 @@ private:
 		emit next_transition_page_changed (page.next_transition_page ());
 		emit previous_transition_page_changed (page.previous_transition_page ());
 		emit slide_changed (page.slide_index ());
+		const auto & slide = document_.slide(page.slide_index());
+		emit annotations_changed (slide.annotations() + page.annotations ());
 	}
 };
 

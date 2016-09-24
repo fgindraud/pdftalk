@@ -185,6 +185,10 @@ public:
 				next_slide_and_comment_panel->addWidget (next_slide_first_page_);
 
 				annotations_ = new QLabel;
+				annotations_->setWordWrap (true);
+				// TODO Possible improvements:
+				// - font size a bit larger
+				// - margins between lines (non-wordwrapped ones)
 				next_slide_and_comment_panel->addWidget (annotations_);
 
 				next_slide_and_comment_panel->addStretch (); // Pad
@@ -220,10 +224,10 @@ public:
 
 public slots:
 
-	void slide_changed (int new_slide_number) {
+	void change_slide (int new_slide_number) {
 		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
 	}
-	void time_changed (bool paused, QString new_time_text) {
+	void change_time (bool paused, QString new_time_text) {
 		// Set text as colored if paused
 		auto color = Qt::white;
 		if (paused)
@@ -233,6 +237,7 @@ public slots:
 		timer_label_->setPalette (p);
 		timer_label_->setText (new_time_text);
 	}
+	void change_annotations (QString new_annotations) { annotations_->setText (new_annotations); }
 };
 
 #endif

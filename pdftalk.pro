@@ -26,7 +26,7 @@ PKGCONFIG += poppler-qt5
 
 ### Misc information ###
 
-VERSION = 0.0.2
+VERSION = 0.1
 DEFINES += PDFTALK_VERSION=$${VERSION}
 
 QMAKE_TARGET_COMPANY = Francois Gindraud

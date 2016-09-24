@@ -18,23 +18,43 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
+#include <QFile>
 #include <QImage>
+#include <QTextStream>
 #include <memory> // unique_ptr
 #include <poppler-qt5.h>
 #include <vector>
 
+#include <QDebug>
+
+/* A presentation (in beamer at least) is a pdf document.
+ * A pdf document is flat and composed of pages (vector images).
+ * The presentation is however composed of slides, which can each contain one or more pages.
+ * More than one page corresponds to internal transitions.
+ * They should not be counted in the slide numbering.
+ *
+ * The PageInfo class is used to represent a pdf page.
+ * It is used as a page descriptor structure, and always passed as a const pointer.
+ * It stores page info (rendering, sizing, slide number).
+ * It also stores links to related pages (next/prev transition, next slide).
+ * These links are pointers which are nullptr if the related page doesn't exists.
+ *
+ * The Document class represents a whole document.
+ * It creates and owns PageInfo objects.
+ * It also stores Slide specific info.
+ * Slide and Page numbering counts from 0.
+ *
+ * Annotations can come from:
+ * - the pdf document, per page (stored in the PageInfo)
+ * - the pdfpc text file, per slide (stored in Document::SlideInfo)
+ */
+
 class PageInfo {
-	/* Describes a pdf document page.
-	 * Propagated by non-owning pointers (nullptr == no corresponding page)
-	 *
-	 * A Page is a PDF document page.
-	 * A slide (in beamer at least) can contain multiple pages if there are transitions.
-	 * The slide_index represents the slide number of a page (counting from 0).
-	 */
 private:
 	// Page info
 	std::unique_ptr<const Poppler::Page> poppler_page_;
 	qreal height_for_width_ratio_{0};
+	QString annotations_; // PDF annotations
 	int slide_index_{-1}; // User slide index, counting from 0
 
 	// Related page links (used for the presenter view)
@@ -50,12 +70,26 @@ private:
 
 public:
 	PageInfo (Poppler::Page * page) : poppler_page_ (page) {
+		// precompute height_for_width_ratio
 		auto page_size_dots = poppler_page_->pageSizeF ();
 		if (!page_size_dots.isEmpty ())
 			height_for_width_ratio_ = page_size_dots.height () / page_size_dots.width ();
+		// retrieve annotations
+		qDebug () << "Label" << page->label ();
+		auto list_of_annotations =
+		    poppler_page_->annotations (QSet<Poppler::Annotation::SubType>{Poppler::Annotation::AText});
+		for (auto a : list_of_annotations) {
+			auto text = a->contents ();
+			qDebug () << "Annotation" << text;
+			annotations_ += text;
+			if (!text.endsWith ('\n'))
+				annotations_ += '\n';
+			delete a;
+		}
 	}
 
 	int slide_index (void) const { return slide_index_; }
+	const QString & annotations (void) const { return annotations_; }
 	const PageInfo * next_transition_page (void) const { return next_transition_page_; }
 	const PageInfo * previous_transition_page (void) const { return previous_transition_page_; }
 	const PageInfo * next_slide_first_page (void) const { return next_slide_first_page_; }
@@ -85,15 +119,37 @@ public:
 	}
 };
 
+class SlideInfo {
+private:
+	int first_page_index_;
+	QString annotations_; // Annotations from pdfpc
+
+	friend class Document;
+	void append_annotation (const QString & text) {
+		annotations_ += text;
+		if (!text.endsWith ('\n'))
+			annotations_ += '\n';
+	}
+
+public:
+	SlideInfo (int first_page_index) : first_page_index_ (first_page_index) {}
+	int first_page_index (void) const { return first_page_index_; }
+	const QString & annotations (void) const { return annotations_; }
+};
+
 class Document {
-	/* Represents an opened pdf document, and serve rendering requests.
-	 * TODO gather annotations to serve requests (pdfpc file, and text type anotation from poppler)
+	/* Represents an opened pdf document.
+	 * The document is represented as a list of PageInfo objects which represents the document pages.
+	 *
+	 * Additionnaly it stores info for each slide (group of pages):
+	 * - first page, to allow seeking in the presentation.
+	 * - pdfpc annotations, which are per slide.
 	 */
 
 private:
 	std::unique_ptr<Poppler::Document> document_;
-	std::vector<PageInfo> pages_;                   // size() gives page number
-	std::vector<int> indexes_of_slide_first_pages_; // size() gives slide number
+	std::vector<PageInfo> pages_;   // size() gives page number
+	std::vector<SlideInfo> slides_; // size() gives slide number
 
 public:
 	explicit Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
@@ -107,7 +163,6 @@ public:
 		document_->setRenderHint (Poppler::Document::Antialiasing, true);
 		document_->setRenderHint (Poppler::Document::TextAntialiasing, true);
 
-		// Create page objects
 		auto nb_pages = document_->numPages ();
 		if (nb_pages <= 0)
 			qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename));
@@ -118,23 +173,36 @@ public:
 				qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
 			pages_.emplace_back (p);
 		}
-		// Determine slide/page structure.
+
+		discover_document_structure ();
+		read_annotations_from_file (filename + "pc");
+	}
+
+	int nb_pages (void) const { return pages_.size (); }
+	int nb_slides (void) const { return slides_.size (); }
+
+	const PageInfo & page (int page_index) const { return pages_.at (page_index); }
+	const SlideInfo & slide (int slide_index) const { return slides_.at (slide_index); }
+
+private:
+	void discover_document_structure (void) {
+		// Parse all pages, and create SlideInfo structures each time we "change of slide"
 		QString current_slide_label = pages_[0].poppler_page_->label ();
-		indexes_of_slide_first_pages_.push_back (0);
-		for (int page_index = 0; page_index < nb_pages; ++page_index) {
+		slides_.emplace_back (0);
+		for (int page_index = 0; page_index < nb_pages (); ++page_index) {
 			auto & page = pages_[page_index];
 			// If label changed since last page, this is the first page of a new slide
 			auto label = page.poppler_page_->label ();
 			if (label != current_slide_label) {
 				// Set "next first page of slide" links of previous pages
-				for (int index = indexes_of_slide_first_pages_.back (); index < page_index; ++index)
+				for (int index = slides_.back ().first_page_index (); index < page_index; ++index)
 					pages_[index].set_next_slide_first_page (&page);
 				// Append to slide list
-				indexes_of_slide_first_pages_.push_back (page_index);
+				slides_.emplace_back (page_index);
 				current_slide_label = label;
 			}
 			// Update slide numbering
-			int current_slide_index = indexes_of_slide_first_pages_.size () - 1;
+			int current_slide_index = slides_.size () - 1;
 			page.set_slide_index (current_slide_index);
 			// Update transition links with previous page
 			if (page_index > 0) {
@@ -146,13 +214,46 @@ public:
 			}
 		}
 	}
-
-	int nb_pages (void) const { return pages_.size (); }
-	int nb_slides (void) const { return indexes_of_slide_first_pages_.size (); }
-
-	const PageInfo & page (int page_index) const { return pages_.at (page_index); }
-	const PageInfo & first_page_of_slide (int slide_index) const {
-		return page (indexes_of_slide_first_pages_.at (slide_index));
+	void read_annotations_from_file (const QString & pdfpc_filename) {
+		QFile pdfpc_file (pdfpc_filename);
+		if (!pdfpc_file.open (QFile::ReadOnly | QFile::Text)) {
+			qWarning ("Unable to open pdfpc file \"%s\", no pdfpc annotations",
+			          qPrintable (pdfpc_filename));
+			return;
+		}
+		QTextStream stream (&pdfpc_file);
+		QString line;
+		int line_index = 0;
+		bool notes_marker_seen = false;
+		int current_slide_index = -1;
+		while (stream.readLineInto (&line)) {
+			line_index++;
+			if (!notes_marker_seen) {
+				// Look for [notes] marker
+				if (line.trimmed () == "[notes]")
+					notes_marker_seen = true;
+			} else {
+				if (line.startsWith ("###")) {
+					// Slide number change
+					line.remove (0, 3);
+					bool int_parsed = false;
+					current_slide_index = line.toInt (&int_parsed, 10) - 1;
+					if (!int_parsed || current_slide_index < 0 || current_slide_index >= nb_slides ()) {
+						qWarning ("Malformed slide number in pdfpc file \"%s\", line %d",
+						          qPrintable (pdfpc_filename), line_index);
+						return;
+					}
+				} else {
+					// Annotation line
+					if (current_slide_index < 0 || current_slide_index >= nb_slides ()) {
+						qWarning ("Current slide number out of bounds (%d/%d), in pdfpc file \"%s\", line %d",
+						          current_slide_index, nb_slides (), qPrintable (pdfpc_filename), line_index);
+						return;
+					}
+					slides_[current_slide_index].append_annotation (line);
+				}
+			}
+		}
 	}
 };
 

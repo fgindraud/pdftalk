@@ -44,7 +44,6 @@ This is only a partial prototype...
 Todo:
 * PDF rendering
 	* Add prerendering, threading, etc...
-* Showing comments & such
 * Auto spread windows on monitors
 
 Maybe Todo:
