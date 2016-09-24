@@ -12,7 +12,7 @@ HEADERS += \
 	src/cache.h \
 	src/controller.h \
 	src/views.h \
-	src/window_pair.h
+	src/window.h
 SOURCES += \
 	src/main.cpp
 

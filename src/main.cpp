@@ -17,7 +17,7 @@
 #include "cache.h"
 #include "controller.h"
 #include "views.h"
-#include "window_pair.h"
+#include "window.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -84,7 +84,7 @@ int main (int argc, char * argv[]) {
 	}
 
 	// Setup window swapping system
-	WindowPair windows{presentation_view, presenter_view};
+	WindowShifter windows{presentation_view, presenter_view};
 
 	// Initialise timer text in interface
 	control.timer_reset (); // TODO reset controller to give first page orders

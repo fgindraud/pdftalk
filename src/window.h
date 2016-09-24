@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef WINDOW_PAIR_H
-#define WINDOW_PAIR_H
+#ifndef WINDOW_H
+#define WINDOW_H
 
 #include <QApplication>
 #include <QKeySequence>
@@ -24,17 +24,17 @@
 #include <QShortcut>
 #include <array>
 
-class WindowPairElement : public QMainWindow {
+class Window : public QMainWindow {
 	/* Detect close event to quit application.
 	 * Toggle fullscreen on 'f' key.
 	 */
 	Q_OBJECT
 
 public:
-	WindowPairElement () {
+	Window () {
 		auto sc = new QShortcut (QKeySequence (tr ("f", "fullscreen key")), this);
 		sc->setAutoRepeat (false);
-		connect (sc, &QShortcut::activated, this, &WindowPairElement::toogle_fullscreen);
+		connect (sc, &QShortcut::activated, this, &Window::toogle_fullscreen);
 	}
 
 private slots:
@@ -44,7 +44,7 @@ private:
 	void closeEvent (QCloseEvent *) Q_DECL_OVERRIDE { QApplication::quit (); }
 };
 
-class WindowPair : public QObject {
+class WindowShifter : public QObject {
 	/* This class takes nb_window content QWidgets, and place them in nb_window windows.
 	 * Pushing the 'f' key on a window will put it in fullscreen.
 	 * Pushing the 's' key will rotate content between windows.
@@ -59,18 +59,18 @@ class WindowPair : public QObject {
 
 private:
 	static constexpr int nb_window = 2; // cannot be template due to Q_OBJECT...
-	std::array<WindowPairElement, nb_window> windows_;
+	std::array<Window, nb_window> windows_;
 	std::array<QWidget *, nb_window> contents_;
 	int current_shift_{0};
 
 public:
 	template <typename... Args>
-	explicit WindowPair (Args &&... args) : contents_{std::forward<Args> (args)...} {
+	explicit WindowShifter (Args &&... args) : contents_{std::forward<Args> (args)...} {
 		for (auto & w : windows_) {
 			// Swap shortcut
 			auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);
 			sc->setAutoRepeat (false);
-			connect (sc, &QShortcut::activated, this, &WindowPair::shift_content);
+			connect (sc, &QShortcut::activated, this, &WindowShifter::shift_content);
 		}
 		set_content_position ();
 		for (auto & w : windows_)

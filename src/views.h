@@ -37,6 +37,7 @@ class PageViewer : public QLabel {
 	 * Label that holds a pixmap and resizes it while keeping aspect ratio, at the center.
 	 * The page shown is selected by asking for a PageIndex.
 	 * Then a request to the rendering cache is emitted, and shown on answer.
+	 * TODO remake doc + use cache
 	 */
 	Q_OBJECT
 
@@ -48,7 +49,7 @@ public:
 		setScaledContents (false);
 		setAlignment (Qt::AlignCenter);
 		setMinimumSize (1, 1); // To prevent nil QLabel when no pixmap is available
-		QSizePolicy policy{QSizePolicy::Ignored, QSizePolicy::Ignored};
+		QSizePolicy policy{QSizePolicy::Expanding, QSizePolicy::Expanding};
 		policy.setHeightForWidth (true);
 		setSizePolicy (policy);
 	}
@@ -60,6 +61,7 @@ public:
 			return page_->height_for_width_ratio () * w;
 		}
 	}
+	QSize sizeHint (void) const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
 
 	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (); }
 
@@ -151,14 +153,14 @@ public:
 			{
 				// Current slide preview
 				auto current_slide_panel = new QVBoxLayout;
-				slide_panels->addLayout (current_slide_panel, 6); // 60%
+				slide_panels->addLayout (current_slide_panel, 6); // 60% screen width
 
 				current_page_ = new PageViewer;
 				current_page_->setObjectName ("presenter/current");
-				current_slide_panel->addWidget (current_page_, 8);
+				current_slide_panel->addWidget (current_page_, 7); // 70% screen height
 
 				auto transition_box = new QHBoxLayout;
-				current_slide_panel->addLayout (transition_box, 2);
+				current_slide_panel->addLayout (transition_box, 3); // 30% screen height
 				{
 					previous_transition_page_ = new PageViewer;
 					previous_transition_page_->setObjectName ("presenter/prev_transition");
@@ -176,7 +178,7 @@ public:
 			{
 				// Next slide preview, and annotations
 				auto next_slide_and_comment_panel = new QVBoxLayout;
-				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40%
+				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40% screen width
 
 				next_slide_first_page_ = new PageViewer;
 				next_slide_first_page_->setObjectName ("presenter/next_slide");

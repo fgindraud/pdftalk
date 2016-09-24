@@ -161,4 +161,7 @@ private slots:
 	}
 };
 
+// TODO adapt and use again
+// TODO add prediction stuff ?
+
 #endif
