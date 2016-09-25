@@ -1,0 +1,8 @@
+\documentclass{beamer}
+% Inserting comment as pdf annotations
+\usepackage{pdfcomment}
+\newcommand<>{\Note}[1]{\only#2{\pdfcomment{#1}}}
+% Works per page, but adds spaces and icons.
+% I tried lot of strategies but the spacing would not disappear...
+% So okayish, but flawed
+\input{data}

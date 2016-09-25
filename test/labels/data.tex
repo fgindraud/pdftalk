@@ -3,7 +3,10 @@
 \usepackage{tikz}
 \usepackage{xcolor}
 
-\title{Basic test talk}
+% This is the basic test, with additionnal labels
+% So far, no effects on PDF page labels
+
+\title{Test talk with frame labels}
 \author{François Gindraud\inst{1}}
 \institute{\inst{1}Home}
 \date{\today}
@@ -20,22 +23,22 @@
 \frame{\tableofcontents}
 
 \section{Without transitions}
-\begin{frame}{Text slide}
+\begin{frame}[label=TextSlide1]{Text slide}
 	\begin{itemize}
 		\item Ein...
 		\item Zwei.
 		\item Drei !
 	\end{itemize}
-	\Note{A shiny itemize !}%
+	\Note{A shiny itemize !}
 	\begin{block}{A block !}
 		You can put stuff inside ! Its awesome !
 	\end{block}
-	\Note{Wow... a block !}%
+	\Note{Wow... a block !}
 	Some text !
-	\Note{And a piece of plain text to finish}%
+	\Note{And a piece of plain text to finish}
 \end{frame}
 
-\begin{frame}{Graphic slide}
+\begin{frame}[label=GraphicSlide1]{Graphic slide}
 	\begin{tikzpicture}[scale=2]
 		\coordinate (O) at (0,0,0);
 		\coordinate (A) at (0,\Width,0);
@@ -56,22 +59,22 @@
 \end{frame}
 
 \section{With transitions}
-\begin{frame}{Text slide 2}
+\begin{frame}[label=TextSlide2]{Text slide 2}
 	\begin{itemize}[<+->]
 		\item Ein...
 		\item Zwei.
 		\item Drei !
 	\end{itemize}
-	\Note<.->{Another shiny itemize !}%
+	\Note<.->{A shiny itemize !}
 	\begin{block}<+->{A block !}
 		You can put stuff inside ! Its awesome !
 	\end{block}
-	\Note<.->{Wow... another block !}%
-	\onslide<+->{\textbf{Some text !}}
-	\Note<.->{And another piece of plain text, but in bold !}%
+	\Note<.->{Wow... a block !}
+	\onslide<+->{Some text !}
+	\Note<.->{And a piece of plain text to finish}
 \end{frame}
 
-\begin{frame}{Graphic slide 2}
+\begin{frame}[label=GraphicSlide2]{Graphic slide 2}
 	\begin{tikzpicture}[scale=2]
 		\coordinate (O) at (0,0,0);
 		\coordinate (A) at (0,\Width,0);
@@ -94,7 +97,6 @@
 \section*{Conclusion}
 \begin{frame}{End}
 	This is the end...
-	\Note{Say how awesome it was !}%
 \end{frame}
 
 \end{document}

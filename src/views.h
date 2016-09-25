@@ -186,6 +186,7 @@ public:
 
 				annotations_ = new QLabel;
 				annotations_->setWordWrap (true);
+				annotations_->setTextFormat (Qt::PlainText);
 				// TODO Possible improvements:
 				// - font size a bit larger
 				// - margins between lines (non-wordwrapped ones)
@@ -201,6 +202,7 @@ public:
 			{
 				slide_number_label_ = new QLabel;
 				slide_number_label_->setAlignment (Qt::AlignCenter);
+				slide_number_label_->setTextFormat (Qt::PlainText);
 				QFont f (slide_number_label_->font ());
 				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
 				slide_number_label_->setFont (f);
@@ -209,6 +211,7 @@ public:
 			{
 				timer_label_ = new QLabel;
 				timer_label_->setAlignment (Qt::AlignCenter);
+				timer_label_->setTextFormat (Qt::PlainText);
 				QFont f (timer_label_->font ());
 				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
 				timer_label_->setFont (f);

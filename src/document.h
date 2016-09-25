@@ -74,17 +74,29 @@ public:
 		auto page_size_dots = poppler_page_->pageSizeF ();
 		if (!page_size_dots.isEmpty ())
 			height_for_width_ratio_ = page_size_dots.height () / page_size_dots.width ();
-		// retrieve annotations
-		qDebug () << "Label" << page->label ();
-		auto list_of_annotations =
-		    poppler_page_->annotations (QSet<Poppler::Annotation::SubType>{Poppler::Annotation::AText});
+		// retrieve text annotations
+		auto list_of_annotations = poppler_page_->annotations ();
 		for (auto a : list_of_annotations) {
-			auto text = a->contents ();
-			qDebug () << "Annotation" << text;
-			annotations_ += text;
-			if (!text.endsWith ('\n'))
-				annotations_ += '\n';
+			if (a->subType () == Poppler::Annotation::AText) {
+				auto text = a->contents ();
+				annotations_ += text;
+				if (!text.endsWith ('\n'))
+					annotations_ += '\n';
+			}
+			// prevent poppler from rendering annotation stuff
+			a->setFlags (a->flags () | Poppler::Annotation::Hidden);
 			delete a;
+		}
+		// DEBUG inspect pages
+		{
+			qDebug () << "label" << page->label ();
+			auto list_of_annotations = poppler_page_->annotations ();
+			for (auto a : list_of_annotations) {
+				if (a->subType () == Poppler::Annotation::AText) {
+					qDebug () << "comment" << a->contents ();
+				}
+				delete a;
+			}
 		}
 	}
 
@@ -171,6 +183,7 @@ public:
 			auto p = document_->page (i);
 			if (p == nullptr)
 				qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
+			qDebug () << "Page" << i;
 			pages_.emplace_back (p);
 		}
 
@@ -226,7 +239,7 @@ private:
 		int line_index = 0;
 		bool notes_marker_seen = false;
 		int current_slide_index = -1;
-		while (stream.readLineInto (&line)) {
+		while (!(line = stream.readLine ()).isNull ()) {
 			line_index++;
 			if (!notes_marker_seen) {
 				// Look for [notes] marker

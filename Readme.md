@@ -32,9 +32,16 @@ The windows can be placed on the two screens (use 's' key to swap them), and can
 Navigation is obvious ('→' '←' 'space' keys).
 The timer can be paused/resumed with 'p', and resetted with 'r'.
 
-To generate text annotation for the presenter window, for now:
-* generate a pdfpc text file with notes (manually or using something like [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes))
-* let beamer insert text annotations (HOW ?)
+To generate text annotations for the presenter window, two options:
+* generate a pdfpc text file with notes (clean)
+	* generated manually of with the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package
+	* limited to per-slide (not page) annotations
+	* PDF document is unmodified, but the .pdfpc file must be brought along
+* add "annotations" to the PDF document itself (a bit hacky)
+	* added manually with a PDF viewer with annotations support, or with the `pdfcomment` latex package
+	* per page annotations
+	* annotations in the PDF document
+	* downside: `pdfcomment` package macros seem to add spaces in the document...
 
 Status
 ------
