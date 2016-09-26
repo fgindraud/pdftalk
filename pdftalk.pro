@@ -8,12 +8,16 @@ CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 QT += core widgets
 HEADERS += \
+	src/action.h \
 	src/document.h \
 	src/cache.h \
 	src/controller.h \
 	src/views.h \
 	src/window.h
 SOURCES += \
+	src/action.cpp \
+	src/document.cpp \
+	src/views.cpp \
 	src/main.cpp
 
 # Poppler

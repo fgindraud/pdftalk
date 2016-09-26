@@ -18,26 +18,25 @@
 #ifndef VIEWS_H
 #define VIEWS_H
 
-#include "controller.h"
 #include "document.h"
 
-#include <QFont>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QPalette>
-#include <QPixmap>
-#include <QSizePolicy>
-#include <QVBoxLayout>
 #include <QWidget>
 
 #include <QDebug>
+#include <QPixmap>
 
 class PageViewer : public QLabel {
-	/* Show a pdf page.
-	 * Label that holds a pixmap and resizes it while keeping aspect ratio, at the center.
-	 * The page shown is selected by asking for a PageIndex.
-	 * Then a request to the rendering cache is emitted, and shown on answer.
-	 * TODO remake doc + use cache
+	/* This widget will show a PDF page (using a QLabel).
+	 * It is shown maximized (keeping aspect ratio), and centered.
+	 *
+	 * The PDF page is indicated by a pointer to a PageInfo structure.
+	 * It will be updated by the Controller during transitions (change_page).
+	 *
+	 * For now, the PDF page is rendered after every change of page or size.
+	 * TODO use caching...
+	 *
+	 * This widget also catches click events and will activate the page actions accordingly.
 	 */
 	Q_OBJECT
 
@@ -45,27 +44,18 @@ private:
 	const PageInfo * page_{nullptr};
 
 public:
-	explicit PageViewer (QWidget * parent = nullptr) : QLabel (parent) {
-		setScaledContents (false);
-		setAlignment (Qt::AlignCenter);
-		setMinimumSize (1, 1); // To prevent nil QLabel when no pixmap is available
-		QSizePolicy policy{QSizePolicy::Expanding, QSizePolicy::Expanding};
-		policy.setHeightForWidth (true);
-		setSizePolicy (policy);
-	}
+	explicit PageViewer (QWidget * parent = nullptr);
 
-	int heightForWidth (int w) const Q_DECL_OVERRIDE {
-		if (page_ == nullptr) {
-			return QLabel::heightForWidth (w);
-		} else {
-			return page_->height_for_width_ratio () * w;
-		}
-	}
+	// Layouting info
+	int heightForWidth (int w) const Q_DECL_OVERRIDE;
 	QSize sizeHint (void) const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
 
 	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (); }
+	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_OVERRIDE;
 
 signals:
+	void action_activated (const Action::Base * action);
+
 	void request_pixmap (const QObject * requester, int page_index, QSize box);
 
 public slots:
@@ -91,155 +81,43 @@ private:
 };
 
 class PresentationView : public PageViewer {
-	/* Presentation window.
-	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
-	 * setPixmap slot from QLabel is reused as it is.
-	 */
+	// Just one PageViewer, but also set a black background.
 	Q_OBJECT
 
 public:
-	explicit PresentationView (QWidget * parent = nullptr) : PageViewer (parent) {
-		// Title
-		setWindowTitle (tr ("Presentation screen"));
-		// Black background
-		QPalette p (palette ());
-		p.setColor (QPalette::Window, Qt::black);
-		setPalette (p);
-		setAutoFillBackground (true);
-		// Debug identification
-		setObjectName ("presentation/current");
-	}
+	explicit PresentationView (QWidget * parent = nullptr);
 };
 
 class PresenterView : public QWidget {
-	/* Presentation window.
-	 * Just show the full size pdf page, keeping aspect ratio, with black borders.
-	 * setPixmap slot from QLabel is reused as it is.
-	 */
+	//
 	Q_OBJECT
 
 private:
 	static constexpr qreal bottom_bar_text_point_size_factor = 2.0;
 
 	const int nb_slides_;
-
 	PageViewer * current_page_;
 	PageViewer * previous_transition_page_;
 	PageViewer * next_transition_page_;
 	PageViewer * next_slide_first_page_;
 	QLabel * annotations_;
-
 	QLabel * slide_number_label_;
 	QLabel * timer_label_;
 
 public:
-	explicit PresenterView (int nb_slides, QWidget * parent = nullptr)
-	    : QWidget (parent), nb_slides_ (nb_slides) {
-		// Title
-		setWindowTitle (tr ("Presenter screen"));
-		// Black background, white text, big bold font for childrens
-		QPalette p (palette ());
-		p.setColor (QPalette::Window, Qt::black);
-		p.setColor (QPalette::WindowText, Qt::white);
-		setPalette (p);
-		setAutoFillBackground (true);
+	explicit PresenterView (int nb_slides, QWidget * parent = nullptr);
 
-		// View structure
-		auto window_structure = new QVBoxLayout;
-		setLayout (window_structure);
-		{
-			auto slide_panels = new QHBoxLayout;
-			window_structure->addLayout (slide_panels, 1);
-			{
-				// Current slide preview
-				auto current_slide_panel = new QVBoxLayout;
-				slide_panels->addLayout (current_slide_panel, 6); // 60% screen width
-
-				current_page_ = new PageViewer;
-				current_page_->setObjectName ("presenter/current");
-				current_slide_panel->addWidget (current_page_, 7); // 70% screen height
-
-				auto transition_box = new QHBoxLayout;
-				current_slide_panel->addLayout (transition_box, 3); // 30% screen height
-				{
-					previous_transition_page_ = new PageViewer;
-					previous_transition_page_->setObjectName ("presenter/prev_transition");
-					transition_box->addWidget (previous_transition_page_);
-
-					transition_box->addStretch ();
-
-					next_transition_page_ = new PageViewer;
-					next_transition_page_->setObjectName ("presenter/next_transition");
-					transition_box->addWidget (next_transition_page_);
-				}
-
-				current_slide_panel->addStretch (); // Pad
-			}
-			{
-				// Next slide preview, and annotations
-				auto next_slide_and_comment_panel = new QVBoxLayout;
-				slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40% screen width
-
-				next_slide_first_page_ = new PageViewer;
-				next_slide_first_page_->setObjectName ("presenter/next_slide");
-				next_slide_and_comment_panel->addWidget (next_slide_first_page_);
-
-				annotations_ = new QLabel;
-				annotations_->setWordWrap (true);
-				annotations_->setTextFormat (Qt::PlainText);
-				// TODO Possible improvements:
-				// - font size a bit larger
-				// - margins between lines (non-wordwrapped ones)
-				next_slide_and_comment_panel->addWidget (annotations_);
-
-				next_slide_and_comment_panel->addStretch (); // Pad
-			}
-		}
-		{
-			// Bottom bar with slide number and time
-			auto bottom_bar = new QHBoxLayout;
-			window_structure->addLayout (bottom_bar);
-			{
-				slide_number_label_ = new QLabel;
-				slide_number_label_->setAlignment (Qt::AlignCenter);
-				slide_number_label_->setTextFormat (Qt::PlainText);
-				QFont f (slide_number_label_->font ());
-				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
-				slide_number_label_->setFont (f);
-				bottom_bar->addWidget (slide_number_label_);
-			}
-			{
-				timer_label_ = new QLabel;
-				timer_label_->setAlignment (Qt::AlignCenter);
-				timer_label_->setTextFormat (Qt::PlainText);
-				QFont f (timer_label_->font ());
-				f.setPointSizeF (bottom_bar_text_point_size_factor * f.pointSizeF ());
-				timer_label_->setFont (f);
-				bottom_bar->addWidget (timer_label_);
-			}
-		}
-	}
-
-	PageViewer * current_page_viewer (void) { return current_page_; }
-	PageViewer * next_slide_first_page_viewer (void) { return next_slide_first_page_; }
-	PageViewer * next_transition_page_viewer (void) { return next_transition_page_; }
-	PageViewer * previous_transition_page_viewer (void) { return previous_transition_page_; }
+	PageViewer * current_page_viewer (void) const { return current_page_; }
+	PageViewer * next_slide_first_page_viewer (void) const { return next_slide_first_page_; }
+	PageViewer * next_transition_page_viewer (void) const { return next_transition_page_; }
+	PageViewer * previous_transition_page_viewer (void) const { return previous_transition_page_; }
 
 public slots:
 
 	void change_slide (int new_slide_number) {
 		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
 	}
-	void change_time (bool paused, QString new_time_text) {
-		// Set text as colored if paused
-		auto color = Qt::white;
-		if (paused)
-			color = Qt::cyan;
-		QPalette p (timer_label_->palette ());
-		p.setColor (QPalette::WindowText, color);
-		timer_label_->setPalette (p);
-		timer_label_->setText (new_time_text);
-	}
+	void change_time (bool paused, const QString & new_time_text);
 	void change_annotations (QString new_annotations) { annotations_->setText (new_annotations); }
 };
 
