@@ -22,8 +22,6 @@
 #include <QTextStream>
 #include <algorithm>
 
-#include <QDebug>
-
 // PageInfo
 
 PageInfo::PageInfo (Poppler::Page * page) : poppler_page_ (page) {
@@ -61,7 +59,11 @@ void PageInfo::init_actions (void) {
 		using PL = Poppler::Link;
 		switch (link->linkType ()) {
 		case PL::Goto: {
-			qDebug () << "Action::Goto";
+			auto p = dynamic_cast<const Poppler::LinkGoto *> (link);
+			if (!p->isExternal ()) {
+				auto page_index = p->destination ().pageNumber () - 1;
+				new_action = new Action::PageIndex (page_index);
+			}
 		} break;
 		case PL::Action: {
 			using PA = Poppler::LinkAction;
@@ -70,15 +72,12 @@ void PageInfo::init_actions (void) {
 			case PA::Quit:
 			case PA::EndPresentation:
 			case PA::Close:
-				qDebug () << "Action::Quit";
 				new_action = new Action::Quit;
 				break;
 			case PA::PageNext:
-				qDebug () << "Action::PageNext";
 				new_action = new Action::PageNext;
 				break;
 			case PA::PagePrev:
-				qDebug () << "Action::PagePrevious";
 				new_action = new Action::PagePrevious;
 				break;
 			default:
@@ -87,7 +86,6 @@ void PageInfo::init_actions (void) {
 		} break;
 		case PL::Browse: {
 			auto p = dynamic_cast<const Poppler::LinkBrowse *> (link);
-			qDebug () << "Action::Browser" << p->url ();
 			new_action = new Action::Browser (p->url ());
 		} break;
 		default:
@@ -95,7 +93,7 @@ void PageInfo::init_actions (void) {
 		}
 		// If we build one, add it to list
 		if (new_action != nullptr) {
-			new_action->set_rect (link->linkArea ());
+			new_action->set_rect (link->linkArea ().normalized ());
 			actions_.emplace_back (new_action);
 		}
 		delete link;
@@ -126,14 +124,11 @@ QImage PageInfo::render (QSize box) const {
 }
 
 const Action::Base * PageInfo::on_click (const QPointF & coord) const {
-	auto it =
-	    std::find_if (actions_.begin (), actions_.end (),
-	                  [&](const std::unique_ptr<Action::Base> & a) { return a->activated (coord); });
-	if (it != actions_.end ()) {
-		return it->get ();
-	} else {
-		return nullptr;
+	for (const auto & action : actions_) {
+		if (action->activated (coord))
+			return action.get ();
 	}
+	return nullptr;
 }
 
 // SlideInfo
@@ -159,7 +154,6 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 		auto p = document_->page (i);
 		if (p == nullptr)
 			qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
-		qDebug () << "Page" << i;
 		pages_.emplace_back (p);
 	}
 

@@ -75,6 +75,12 @@ public:
 	QImage render (QSize box) const;
 
 	const Action::Base * on_click (const QPointF & coord) const;
+#ifdef QT_DEBUG
+	template <typename Callable> void foreach_action (Callable && f) const {
+		for (const auto & a : actions_)
+			f (a.get ());
+	}
+#endif
 
 private:
 	// Related page links editions by document

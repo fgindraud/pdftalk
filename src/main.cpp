@@ -75,12 +75,14 @@ int main (int argc, char * argv[]) {
 	QObject::connect (&control, &Controller::previous_transition_page_changed,
 	                  presenter_view->previous_transition_page_viewer (), &PageViewer::change_page);
 
-	// Link viewers to caching system
+	// Link viewers to actions & caching system
 	PageViewer * viewers[] = {presentation_view, presenter_view->current_page_viewer (),
 	                          presenter_view->next_slide_first_page_viewer (),
 	                          presenter_view->next_transition_page_viewer (),
 	                          presenter_view->previous_transition_page_viewer ()};
 	for (auto v : viewers) {
+		QObject::connect (v, &PageViewer::action_activated, &control, &Controller::execute_action);
+
 		QObject::connect (v, &PageViewer::request_pixmap, &cache, &RenderCache::request_page);
 		QObject::connect (&cache, &RenderCache::new_pixmap, v, &PageViewer::receive_pixmap);
 	}

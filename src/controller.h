@@ -18,6 +18,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
+#include "action.h"
 #include "cache.h"
 #include "document.h"
 
@@ -26,6 +27,8 @@
 #include <QShortcut>
 #include <QTime>
 class QWidget;
+
+#include <QDebug>
 
 class Timing : public QObject {
 	/* Timer for a presentation.
@@ -106,16 +109,12 @@ signals:
 
 public slots:
 	// Page navigation
-	void go_to_next_page (void) {
-		if (current_page_ + 1 < document_.nb_pages ()) {
-			current_page_++;
-			timer_start ();
-			update_views ();
-		}
-	}
-	void go_to_previous_page (void) {
-		if (current_page_ > 0) {
-			current_page_--;
+	void go_to_next_page (void) { go_to_page_index (current_page_ + 1); }
+	void go_to_previous_page (void) { go_to_page_index (current_page_ - 1); }
+	void go_to_page_index (int index) {
+		if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
+			current_page_ = index;
+			qDebug () << "current_page" << index;
 			timer_start ();
 			update_views ();
 		}
@@ -126,6 +125,9 @@ public slots:
 	void timer_toggle_pause (void) { timer_.toggle_pause (); }
 	void timer_reset (void) { timer_.reset (); }
 
+	// Action
+	void execute_action (const Action::Base * action) { action->execute (*this); }
+
 private:
 	void update_views (void) {
 		const auto & page = document_.page (current_page_);
@@ -134,8 +136,8 @@ private:
 		emit next_transition_page_changed (page.next_transition_page ());
 		emit previous_transition_page_changed (page.previous_transition_page ());
 		emit slide_changed (page.slide_index ());
-		const auto & slide = document_.slide(page.slide_index());
-		emit annotations_changed (slide.annotations() + page.annotations ());
+		const auto & slide = document_.slide (page.slide_index ());
+		emit annotations_changed (slide.annotations () + page.annotations ());
 	}
 };
 
