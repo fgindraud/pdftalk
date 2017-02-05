@@ -109,8 +109,6 @@ signals:
 
 public slots:
 	// Page navigation
-	void go_to_next_page (void) { go_to_page_index (current_page_ + 1); }
-	void go_to_previous_page (void) { go_to_page_index (current_page_ - 1); }
 	void go_to_page_index (int index) {
 		if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 			current_page_ = index;
@@ -119,6 +117,10 @@ public slots:
 			update_views ();
 		}
 	}
+	void go_to_next_page (void) { go_to_page_index (current_page_ + 1); }
+	void go_to_previous_page (void) { go_to_page_index (current_page_ - 1); }
+	void go_to_first_page (void) { go_to_page_index (0); }
+	void go_to_last_page (void) { go_to_page_index (document_.nb_pages () - 1); }
 
 	// Timer control
 	void timer_start (void) { timer_.start (); }

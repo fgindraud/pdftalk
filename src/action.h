@@ -23,7 +23,9 @@
 class Controller;
 
 namespace Action {
-// TODO add PageFirst, PageLast navigation (controller, Action, init_actions)
+/* In debug builds, actions items are visually represented on viewers.
+ * Additional metadata is required, which is why there are #ifdefs.
+ */
 
 class Base {
 private:
@@ -74,6 +76,20 @@ public:
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
 #ifdef QT_DEBUG
 	QString text (void) const Q_DECL_OVERRIDE { return "PP"; }
+#endif
+};
+class PageFirst : public Base {
+public:
+	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+#ifdef QT_DEBUG
+	QString text (void) const Q_DECL_OVERRIDE { return "PF"; }
+#endif
+};
+class PageLast : public Base {
+public:
+	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+#ifdef QT_DEBUG
+	QString text (void) const Q_DECL_OVERRIDE { return "PL"; }
 #endif
 };
 class PageIndex : public Base {

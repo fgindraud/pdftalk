@@ -46,7 +46,7 @@ To generate text annotations for the presenter window, two options:
 Status
 ------
 
-This is only a partial prototype...
+This is at an alpha stage: it works but is limited...
 
 Todo:
 * PDF rendering
@@ -54,21 +54,20 @@ Todo:
 * Auto spread windows on monitors
 
 Maybe Todo:
-* Support for durations
-* Link actions
+* Support for durations (no animations for now)
 * Support for Poppler Rotation flags (don't know when it matters)
 * Disable screensaver
 
 Unlikely Todo:
 * Movies
 * Transitions / animations
-* Clean support of notes
+* Clean support of pdf annotations
 
 License
 -------
 
 ```
-PDFTalk - PDF presenation tool
+PDFTalk - PDF presentation tool
 Copyright (C) 2016 Francois Gindraud
 
 This program is free software: you can redistribute it and/or modify

@@ -80,7 +80,15 @@ void PageInfo::init_actions (void) {
 			case PA::PagePrev:
 				new_action = new Action::PagePrevious;
 				break;
+			case PA::PageFirst:
+				new_action = new Action::PageFirst;
+				break;
+			case PA::PageLast:
+				new_action = new Action::PageLast;
+				break;
 			default:
+				// Not handled: History{Forward/Back}, GoToPage, Find, Print
+				// TODO handle gotopage ? (with a hotkey as well)
 				break;
 			}
 		} break;
@@ -89,6 +97,7 @@ void PageInfo::init_actions (void) {
 			new_action = new Action::Browser (p->url ());
 		} break;
 		default:
+			// Not handled: Execute, Sound, Movie, Rendition, JavaScript
 			break;
 		}
 		// If we build one, add it to list

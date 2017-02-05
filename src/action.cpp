@@ -33,6 +33,12 @@ void PageNext::execute (Controller & controller) const {
 void PagePrevious::execute (Controller & controller) const {
 	controller.go_to_previous_page ();
 }
+void PageFirst::execute (Controller & controller) const {
+	controller.go_to_first_page ();
+}
+void PageLast::execute (Controller & controller) const {
+	controller.go_to_last_page ();
+}
 void PageIndex::execute (Controller & controller) const {
 	controller.go_to_page_index (index_);
 }

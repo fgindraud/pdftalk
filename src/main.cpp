@@ -46,6 +46,7 @@ int main (int argc, char * argv[]) {
 		Q_UNREACHABLE ();
 	}
 
+	// TODO add nicer error detection on pdf opening...
 	const Document document (arguments[0]);
 	Controller control (document);
 	RenderCache cache (document);
