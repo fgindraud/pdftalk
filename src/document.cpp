@@ -35,7 +35,7 @@ PageInfo::PageInfo (Poppler::Page * page) : poppler_page_ (page) {
 }
 
 void PageInfo::init_annotations (void) {
-	// TODO add two runtime options:
+	// TODO add two runtime options ?
 	// - bool: hide annotations or not ?
 	// - bool: use text annotations in presenter screen ?
 	auto list_of_annotations = poppler_page_->annotations ();

@@ -43,15 +43,6 @@ int PageViewer::heightForWidth (int w) const {
 	}
 }
 
-#ifdef QT_DEBUG
-#include <QDebug>
-#include <cstdint>
-static int hash_ptr (const void * p) {
-	auto t = reinterpret_cast<uintptr_t> (p);
-	return static_cast<int> (t ^ (t >> 2) ^ (t >> 4)) % 100;
-}
-#endif
-
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	if (event->button () == Qt::LeftButton && !size ().isEmpty () && page_ != nullptr) {
 		// Determine pixmap position (centered)
@@ -65,42 +56,10 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 		             static_cast<qreal> (event->y () - pixmap_offset_in_label.height ()) /
 		                 static_cast<qreal> (pixmap_size.height ()));
 		auto action = page_->on_click (click_pos_01);
-		if (action != nullptr) {
-#ifdef QT_DEBUG
-			qDebug () << "activated" << hash_ptr (action);
-#endif
+		if (action != nullptr)
 			emit action_activated (action);
-		}
 	}
 }
-
-#ifdef QT_DEBUG
-#include <QColor>
-#include <QPainter>
-void PageViewer::add_debug_info (QPixmap & pixmap) {
-	Q_ASSERT (page_ != nullptr);
-	QPainter p (&pixmap);
-	page_->foreach_action ([&](const Action::Base * action) {
-		// Choose random color
-		int hue = qrand () % 359;
-		int sat = 255;
-		int lum = 255 / 2 + (qrand () % 3 - 1) * 255 / 4;
-		p.setPen (QColor::fromHsv (hue, sat, lum));
-		// Rectangle
-		auto rect_01 = action->rect ();
-		QRect rect_px (rect_01.x () * pixmap.width (), rect_01.y () * pixmap.height (),
-		               rect_01.width () * pixmap.width (), rect_01.height () * pixmap.height ());
-		p.drawRect (rect_px);
-		// Add text above
-		auto text = action->text ();
-		p.drawText (rect_px.translated (0, -rect_px.height ()), 0, text);
-		// Add ptr hash above
-		p.drawText (rect_px.translated (0, -2 * rect_px.height ()), 0,
-		            QString::number (hash_ptr (action)));
-	});
-}
-#endif
-// TODO in debug : just add rectangles
 
 // PresentationView
 

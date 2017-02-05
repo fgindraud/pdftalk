@@ -23,9 +23,6 @@
 class Controller;
 
 namespace Action {
-/* In debug builds, actions items are visually represented on viewers.
- * Additional metadata is required, which is why there are #ifdefs.
- */
 
 class Base {
 private:
@@ -36,19 +33,11 @@ public:
 
 	void set_rect (const QRectF & rect) { rect_ = rect; }
 	bool activated (const QPointF & point) const { return rect_.contains (point); }
-
-#ifdef QT_DEBUG
-	virtual QString text (void) const = 0;
-	const QRectF & rect (void) const { return rect_; }
-#endif
 };
 
 class Quit : public Base {
 public:
 	void execute (Controller &) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "Q"; }
-#endif
 };
 
 class Browser : public Base {
@@ -58,39 +47,24 @@ private:
 public:
 	Browser (const QString & url) : url_ (url) {}
 	void execute (Controller &) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "L"; }
-#endif
 };
 
 // Navigation
 class PageNext : public Base {
 public:
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "PN"; }
-#endif
 };
 class PagePrevious : public Base {
 public:
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "PP"; }
-#endif
 };
 class PageFirst : public Base {
 public:
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "PF"; }
-#endif
 };
 class PageLast : public Base {
 public:
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return "PL"; }
-#endif
 };
 class PageIndex : public Base {
 private:
@@ -99,9 +73,6 @@ private:
 public:
 	PageIndex (int index) : index_ (index) {}
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
-#ifdef QT_DEBUG
-	QString text (void) const Q_DECL_OVERRIDE { return QString ("P%1").arg (index_); }
-#endif
 };
 }
 

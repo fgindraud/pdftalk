@@ -67,19 +67,12 @@ public slots:
 	void receive_pixmap (const QObject * requester, int page_index, QPixmap pixmap) {}
 
 private:
-#ifdef QT_DEBUG
-	void add_debug_info (QPixmap & pixmap);
-#endif
-
 	void update_label (void) {
 		static constexpr int pixmap_size_limit_px = 10;
 		if (page_ == nullptr || width () < pixmap_size_limit_px || height () < pixmap_size_limit_px) {
 			clear ();
 		} else {
 			auto pix = QPixmap::fromImage (page_->render (size ()));
-#ifdef QT_DEBUG
-			add_debug_info (pix);
-#endif
 			setPixmap (pix);
 		}
 	}
