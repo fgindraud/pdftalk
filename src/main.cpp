@@ -21,6 +21,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QTimer>
 
 int main (int argc, char * argv[]) {
 	QApplication app (argc, argv);
@@ -91,7 +92,7 @@ int main (int argc, char * argv[]) {
 	// Setup window swapping system
 	WindowShifter windows{presentation_view, presenter_view};
 
-	// Initialise timer text in interface
-	control.timer_reset (); // TODO reset controller to give first page orders
+	// Init system
+	QTimer::singleShot (0, &control, &Controller::reset);
 	return app.exec ();
 }

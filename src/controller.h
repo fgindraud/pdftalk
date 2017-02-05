@@ -129,6 +129,13 @@ public slots:
 
 	// Action
 	void execute_action (const Action::Base * action) { action->execute (*this); }
+	
+	// Full reset, also used for init
+	void reset (void) {
+		current_page_ = 0;
+		update_views ();
+		timer_reset ();
+	}
 
 private:
 	void update_views (void) {
