@@ -52,7 +52,7 @@ int main (int argc, char * argv[]) {
 	// TODO add nicer error detection on pdf opening...
 	const Document document (arguments[0]);
 	Controller control (document);
-	Render::Cache renderer;
+	Render::System renderer (10000000); // Cache size, 10Mo, TODO program arg
 
 	// Setup windows
 	auto presentation_view = new PresentationView;
@@ -87,8 +87,8 @@ int main (int argc, char * argv[]) {
 	for (auto v : viewers) {
 		QObject::connect (v, &PageViewer::action_activated, &control, &Controller::execute_action);
 
-		QObject::connect (v, &PageViewer::request_render, &renderer, &Render::Cache::request_render);
-		QObject::connect (&renderer, &Render::Cache::new_render, v, &PageViewer::receive_pixmap);
+		QObject::connect (v, &PageViewer::request_render, &renderer, &Render::System::request_render);
+		QObject::connect (&renderer, &Render::System::new_render, v, &PageViewer::receive_pixmap);
 	}
 
 	// Setup window swapping system

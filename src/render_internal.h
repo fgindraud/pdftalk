@@ -18,16 +18,26 @@
 #ifndef RENDER_INTERNAL_H
 #define RENDER_INTERNAL_H
 
-/* Qt MOC requires classes to be in headers.
- * This header contains internal stuff for the rendering system.
- */
 #include "render.h"
 
 #include <QByteArray>
+#include <QCache>
 #include <QImage>
+#include <QPixmap>
 #include <QRunnable>
 #include <utility>
 
+/* Internal header of the rendering system.
+ *
+ * My analysis of PDFpc rendering strategy:
+ * PDFpc prerenders pages and then compress the bitmap data.
+ * When displaying, it thus needs to uncompress the data and recreate a "pixmap" to display.
+ * No idea which pixmap caching is done, or how pixmap are resized for the different uses.
+ *
+ * My strategy is a more basic caching, as window sizes are expected to change.
+ * TODO explanations
+ * Renders (QImages) are stored as compressed data (metadata + qCompressed' QByteArray of data).
+ */
 namespace Render {
 
 // Stores data for a Compressed render
@@ -39,12 +49,12 @@ struct Compressed {
 };
 
 // Rendering, Compressing / Uncompressing primitives
-std::pair<Compressed, QPixmap> make_render (const Request & request);
+std::pair<Compressed *, QPixmap> make_render (const Request & request);
 QPixmap make_pixmap_from_compressed_render (const Compressed & render);
 
+/*
 class Task : public QObject, public QRunnable {
-	/* "Render a page" task for QThreadPool.
-	 */
+	// "Render a page" task for QThreadPool.
 	Q_OBJECT
 
 private:
@@ -64,6 +74,23 @@ public:
 		auto result = make_render (request_);
 		emit finished_rendering (requester_, request_, result.first, result.second);
 	}
+};*/
+
+class SystemPrivate : public QObject {
+	/* Caching system (internals).
+	 * Stores compressed renders in a cache to avoid rerendering stuff later.
+	 */
+	Q_OBJECT
+
+private:
+	System * parent_;
+	QCache<Request, Compressed> cache;
+
+public:
+	SystemPrivate (int cache_size_bytes, System * parent)
+	    : QObject (parent), parent_ (parent), cache (cache_size_bytes) {}
+
+	void request_render (const QObject * requester, const Request & request);
 };
 }
 Q_DECLARE_METATYPE (Render::Compressed);

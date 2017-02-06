@@ -18,16 +18,9 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-/* My analysis of PDFpc rendering strategy:
- * PDFpc prerenders pages and then compress the bitmap data.
- * When displaying, it thus needs to uncompress the data and recreate a "pixmap" to display.
- * No idea which pixmap caching is done, or how pixmap are resized for the different uses.
- *
- * My strategy is similar:
- * Renders (QImages) are stored as compressed data (metadata + qCompressed' QByteArray of data).
- */
 #include "document.h"
 
+#include <QHash>
 #include <QPixmap>
 #include <QSize>
 
@@ -38,22 +31,44 @@ struct Request {
 	const PageInfo * page;
 	QSize size;
 };
+inline bool operator== (const Request & a, const Request & b) {
+	return a.page == b.page && a.size == b.size;
+}
+inline uint qHash (const Request & r, uint seed = 0) {
+	using ::qHash; // Have access to Qt's basic qHash
+	return qHash (r.page, seed) ^ qHash (r.size.width (), seed) ^ qHash (r.size.height (), seed);
+}
 
-class Cache : public QObject {
-	/* Global render caching system.
-	 * TODO implem (use QCache for internal ?)
+class SystemPrivate;
+
+class System : public QObject {
+	/* Global rendering system.
+	 * Classes (viewers) can request a render by signaling request_render().
+	 * After some time, new_render will return the requested pixmap.
+	 * QObject * requester and the request struct let viewers identify their answers.
+	 *
+	 * Internally, the cost of rendering is reduced by caching (see render_internal.h).
+	 * cache_size_bytes sets the size of the cache in bytes.
 	 */
 	Q_OBJECT
 
+private:
+	SystemPrivate * d_;
+
+public:
+	System (int cache_size_bytes);
+
 signals:
-	void new_render (const QObject * requester, Request request, QPixmap render);
+	void new_render (const QObject * requester, const Request & request, QPixmap render);
 
 public slots:
-	void request_render (Request request);
+	void request_render (const Request & request);
 };
 
+// To let Qt know about some internal types used.
 void register_metatypes (void);
 }
+
 Q_DECLARE_METATYPE (Render::Request);
 
 #endif

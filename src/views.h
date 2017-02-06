@@ -33,8 +33,7 @@ class PageViewer : public QLabel {
 	 * The PDF page is indicated by a pointer to a PageInfo structure.
 	 * It will be updated by the Controller during transitions (change_page).
 	 *
-	 * For now, the PDF page is rendered after every change of page or size.
-	 * TODO use caching...
+	 * Requests for Pixmaps will go through the Rendering system.
 	 *
 	 * This widget also catches click events and will activate the page actions accordingly.
 	 */
@@ -64,7 +63,8 @@ public slots:
 			update_label ();
 		}
 	}
-	void receive_pixmap (const QObject * requester, Render::Request request, QPixmap pixmap) {
+	void receive_pixmap (const QObject * requester, const Render::Request & request, QPixmap pixmap) {
+		// Filter to only use the requested pixmaps
 		if (requester == this && request.page == page_ && request.size == size ())
 			setPixmap (pixmap);
 	}

@@ -25,6 +25,12 @@ class Controller;
 namespace Action {
 
 class Base {
+	/* All clickable actions derive from Base.
+	 * Base provides a common rect field to identify the clickable rectangle.
+	 * Sub-classes can then overload execute, which is called on a click.
+	 *
+	 * Actions are extracted from the document in document.cpp.
+	 */
 private:
 	QRectF rect_; // In relative [0,1] coordinates
 public:
