@@ -64,9 +64,6 @@ signals:
 public slots:
 	void request_render (const Request & request);
 };
-
-// To let Qt know about some internal types used.
-void register_metatypes (void);
 }
 
 Q_DECLARE_METATYPE (Render::Request);

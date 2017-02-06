@@ -52,7 +52,6 @@ struct Compressed {
 std::pair<Compressed *, QPixmap> make_render (const Request & request);
 QPixmap make_pixmap_from_compressed_render (const Compressed & render);
 
-/*
 class Task : public QObject, public QRunnable {
 	// "Render a page" task for QThreadPool.
 	Q_OBJECT
@@ -66,7 +65,8 @@ public:
 	    : requester_ (requester), request_ (request) {}
 
 signals:
-	void finished_rendering (const QObject * requester, Request request, Compressed compressed,
+	// "Render::Request" as Qt is not very namespace friendly
+	void finished_rendering (const QObject * requester, Render::Request request, Compressed * compressed,
 	                         QPixmap pixmap);
 
 public:
@@ -74,11 +74,12 @@ public:
 		auto result = make_render (request_);
 		emit finished_rendering (requester_, request_, result.first, result.second);
 	}
-};*/
+};
 
 class SystemPrivate : public QObject {
 	/* Caching system (internals).
 	 * Stores compressed renders in a cache to avoid rerendering stuff later.
+	 * Rendering is done through Tasks in a QThreadPool.
 	 */
 	Q_OBJECT
 
@@ -91,8 +92,12 @@ public:
 	    : QObject (parent), parent_ (parent), cache (cache_size_bytes) {}
 
 	void request_render (const QObject * requester, const Request & request);
+
+private slots:
+	// "Render::Request" as Qt is not very namespace friendly
+	void rendering_finished (const QObject * requester, Render::Request request, Compressed * compressed,
+	                         QPixmap pixmap);
 };
 }
-Q_DECLARE_METATYPE (Render::Compressed);
 
 #endif

@@ -17,8 +17,9 @@
 #include "render.h"
 #include "render_internal.h"
 
-#include <QThreadPool>
 #include <QDebug>
+#include <QMetaType>
+#include <QThreadPool>
 
 namespace Render {
 // Rendering, Compressing / Uncompressing primitives
@@ -48,7 +49,9 @@ QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 
 // System impl
 
-System::System (int cache_size_bytes) : d_ (new SystemPrivate (cache_size_bytes, this)) {}
+System::System (int cache_size_bytes) : d_ (new SystemPrivate (cache_size_bytes, this)) {
+	qRegisterMetaType<Request> (); // Request registration (once before use in connect)
+}
 
 void System::request_render (const Request & request) {
 	d_->request_render (sender (), request);
@@ -62,24 +65,18 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 		emit parent_->new_render (requester, request,
 		                          make_pixmap_from_compressed_render (*compressed_render));
 	} else {
-		// Make new render
+		// Make new render (spawn a Task in a QThreadPool)
 		qDebug () << "render" << request.page << request.size;
-		auto r = make_render (request);
-		cache.insert (request, r.first, r.first->data.size ());
-		emit parent_->new_render (requester, request, r.second);
+		auto task = new Task (requester, request);
+		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
+		QThreadPool::globalInstance ()->start (task);
 	}
 }
 
-void register_metatypes (void) {
-	qRegisterMetaType<Request> ();
-	qRegisterMetaType<Compressed> ();
+void SystemPrivate::rendering_finished (const QObject * requester, Request request,
+                                        Compressed * compressed, QPixmap pixmap) {
+	// When rendering has finished: store compressed, give pixmap
+	cache.insert (request, compressed, compressed->data.size ());
+	emit parent_->new_render (requester, request, pixmap);
 }
 }
-
-#if 0
-			// Launch render
-			auto task = new RenderTask (requester, document_, page_index, box);
-			connect (task, &RenderTask::finished_rendering, this, &RenderCache::render_finished);
-			QThreadPool::globalInstance ()->start (task);
-		}
-#endif

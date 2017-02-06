@@ -34,8 +34,6 @@ int main (int argc, char * argv[]) {
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
 
-	Render::register_metatypes ();
-
 	// Command line parsing
 	QCommandLineParser parser;
 	parser.setApplicationDescription ("PDF presentation tool");
