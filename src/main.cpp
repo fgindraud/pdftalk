@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "cache.h"
 #include "controller.h"
+#include "render.h"
 #include "views.h"
 #include "window.h"
 
@@ -24,6 +24,7 @@
 #include <QTimer>
 
 int main (int argc, char * argv[]) {
+	// Qt setup
 	QApplication app (argc, argv);
 	QCoreApplication::setApplicationName ("pdftalk");
 #define XSTR(x) #x
@@ -33,8 +34,9 @@ int main (int argc, char * argv[]) {
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
 
-	qRegisterMetaType<CompressedRender> ();
+	Render::register_metatypes ();
 
+	// Command line parsing
 	QCommandLineParser parser;
 	parser.setApplicationDescription ("PDF presentation tool");
 	parser.addHelpOption ();
@@ -50,7 +52,7 @@ int main (int argc, char * argv[]) {
 	// TODO add nicer error detection on pdf opening...
 	const Document document (arguments[0]);
 	Controller control (document);
-	RenderCache cache (document);
+	Render::Cache renderer;
 
 	// Setup windows
 	auto presentation_view = new PresentationView;
@@ -85,8 +87,8 @@ int main (int argc, char * argv[]) {
 	for (auto v : viewers) {
 		QObject::connect (v, &PageViewer::action_activated, &control, &Controller::execute_action);
 
-		QObject::connect (v, &PageViewer::request_pixmap, &cache, &RenderCache::request_page);
-		QObject::connect (&cache, &RenderCache::new_pixmap, v, &PageViewer::receive_pixmap);
+		QObject::connect (v, &PageViewer::request_render, &renderer, &Render::Cache::request_render);
+		QObject::connect (&renderer, &Render::Cache::new_render, v, &PageViewer::receive_pixmap);
 	}
 
 	// Setup window swapping system

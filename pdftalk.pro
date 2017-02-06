@@ -10,7 +10,8 @@ QT += core widgets
 HEADERS += \
 	src/action.h \
 	src/document.h \
-	src/cache.h \
+	src/render.h \
+	src/render_internal.h \
 	src/controller.h \
 	src/views.h \
 	src/window.h
@@ -18,6 +19,7 @@ SOURCES += \
 	src/action.cpp \
 	src/document.cpp \
 	src/views.cpp \
+	src/render.cpp \
 	src/main.cpp
 
 # Poppler

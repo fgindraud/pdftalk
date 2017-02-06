@@ -19,6 +19,7 @@
 #define VIEWS_H
 
 #include "document.h"
+#include "render.h"
 
 #include <QLabel>
 #include <QWidget>
@@ -54,8 +55,7 @@ public:
 
 signals:
 	void action_activated (const Action::Base * action);
-
-	void request_pixmap (const QObject * requester, int page_index, QSize box);
+	void request_render (Render::Request request);
 
 public slots:
 	void change_page (const PageInfo * new_page) {
@@ -64,19 +64,19 @@ public slots:
 			update_label ();
 		}
 	}
-	void receive_pixmap (const QObject * requester, int page_index, QPixmap pixmap) {}
+	void receive_pixmap (const QObject * requester, Render::Request request, QPixmap pixmap) {
+		if (requester == this && request.page == page_ && request.size == size ())
+			setPixmap (pixmap);
+	}
 
 private:
 	void update_label (void) {
 		static constexpr int pixmap_size_limit_px = 10;
-		if (page_ == nullptr || width () < pixmap_size_limit_px || height () < pixmap_size_limit_px) {
-			clear ();
-		} else {
-			auto pix = QPixmap::fromImage (page_->render (size ()));
-			setPixmap (pix);
-		}
+		clear (); // Remove old pixmap
+		// Ask for a new pixmap only if useful
+		if (page_ != nullptr && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px)
+			emit request_render ({page_, size ()});
 	}
-	//		to_show = to_show.scaled (size (), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 };
 
 class PresentationView : public PageViewer {

@@ -19,7 +19,6 @@
 #define CONTROLLER_H
 
 #include "action.h"
-#include "cache.h"
 #include "document.h"
 
 #include <QBasicTimer>

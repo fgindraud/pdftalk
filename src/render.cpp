@@ -14,53 +14,34 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-#ifndef CACHE_H
-#define CACHE_H
-
-#include "document.h"
+#include "render.h"
+#include "render_internal.h"
 
 #include <QByteArray>
 #include <QImage>
 #include <QPixmap>
-#include <QRunnable>
 #include <QSize>
 #include <QThreadPool>
-#include <utility>
 #include <vector>
 
 #include <QDebug>
 
-/* My analysis of PDFpc rendering strategy:
- * PDFpc prerenders pages and then compress the bitmap data.
- * When displaying, it thus needs to uncompress the data and recreate a "pixmap" to display.
- * No idea which pixmap caching is done, or how pixmap are resized for the different uses.
- *
- * My strategy is similar:
- * Renders (QImages) are stored as compressed data (metadata + qCompressed' QByteArray of data).
- */
-struct CompressedRender {
-	// Compressed render info
-	QByteArray data;
-	QSize size;
-	int bytes_per_line;
-	QImage::Format image_format;
-};
-Q_DECLARE_METATYPE (CompressedRender);
+namespace Render {
+// Rendering, Compressing / Uncompressing primitives
 
-inline std::pair<CompressedRender, QPixmap> make_render (const Document & document, int page_index,
-                                                         const QSize & box) {
-	QImage image = document.page (page_index).render (box);
+std::pair<Compressed, QPixmap> make_render (const Request & request) {
+	// Renders, and returns both the pixmap and the compressed image
+	QImage image = request.page->render (request.size);
 	auto compressed_data = qCompress (image.bits (), image.byteCount ());
 	auto compressed_render =
-	    CompressedRender{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
+	    Compressed{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
 	return {compressed_render, QPixmap::fromImage (std::move (image))};
 }
 
-inline void qbytearray_deleter (void * p) {
+static void qbytearray_deleter (void * p) {
 	delete static_cast<QByteArray *> (p);
 }
-inline QPixmap make_pixmap_from_compressed_render (const CompressedRender & render) {
+QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 	// Recreate an image and then a pixmap from compressed data
 	// Try to avoid any useless copy by using the non-owning QImage constructor
 	auto uncompressed_data = new QByteArray;
@@ -71,32 +52,21 @@ inline QPixmap make_pixmap_from_compressed_render (const CompressedRender & rend
 	return QPixmap::fromImage (std::move (image));
 }
 
-class RenderTask : public QObject, public QRunnable {
-	/* "Render a page" task for QThreadPool.
-	 */
-	Q_OBJECT
+// Cache impl
 
-private:
-	const Document & document_;
-	const int page_index_;
-	const QSize box_;
-	const QObject * requester_;
+void Cache::request_render (Request request) {
+	const QObject * requester = sender ();
+	auto p = QPixmap::fromImage (request.page->render (request.size));
+	emit new_render (requester, request, p);
+}
 
-public:
-	RenderTask (const QObject * requester, const Document & document, int page_index, QSize box)
-	    : document_ (document), page_index_ (page_index), box_ (box), requester_ (requester) {}
+void register_metatypes (void) {
+	qRegisterMetaType<Request> ();
+	qRegisterMetaType<Compressed> ();
+}
+}
 
-signals:
-	void finished_rendering (const QObject * requester, int page_index,
-	                         CompressedRender compressed_render, QPixmap pixmap);
-
-public:
-	void run (void) Q_DECL_OVERRIDE {
-		auto result = make_render (document_, page_index_, box_);
-		emit finished_rendering (requester_, page_index_, result.first, result.second);
-	}
-};
-
+#if 0
 class RenderCache : public QObject {
 	/* Stores CompressedRender objects, and uncompress them as needed.
 	 */
@@ -160,8 +130,4 @@ private slots:
 		emit new_pixmap (requester, page_index, pixmap);
 	}
 };
-
-// TODO adapt and use again
-// TODO add prediction stuff ?
-
 #endif
