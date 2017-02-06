@@ -50,7 +50,7 @@ int main (int argc, char * argv[]) {
 	// TODO add nicer error detection on pdf opening...
 	const Document document (arguments[0]);
 	Controller control (document);
-	Render::System renderer (10000000); // Cache size, 10Mo, TODO program arg
+	Render::System renderer (10000000, 1); // Cache size, 10Mo, TODO program arg
 
 	// Setup windows
 	auto presentation_view = new PresentationView;

@@ -25,6 +25,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QRunnable>
+#include <QSet>
 #include <utility>
 
 /* Internal header of the rendering system.
@@ -34,9 +35,14 @@
  * When displaying, it thus needs to uncompress the data and recreate a "pixmap" to display.
  * No idea which pixmap caching is done, or how pixmap are resized for the different uses.
  *
- * My strategy is a more basic caching, as window sizes are expected to change.
- * TODO explanations
- * Renders (QImages) are stored as compressed data (metadata + qCompressed' QByteArray of data).
+ * In PDFTalk, window sizes are expected to change from program launch to presentation running.
+ * No total prerendering is done.
+ * Instead we use a LRU cache (bounded by a memory usage) of renders (indexed by page x size).
+ * Rendering is done on demand (when pages are requested).
+ * When a page is rendered (QImage), we store a qCompressed version in the cache (Compressed).
+ * Page requests are fulfilled from the Compressed if available, or from a render.
+ *
+ * Pre-rendering TODO
  */
 namespace Render {
 
@@ -66,8 +72,8 @@ public:
 
 signals:
 	// "Render::Request" as Qt is not very namespace friendly
-	void finished_rendering (const QObject * requester, Render::Request request, Compressed * compressed,
-	                         QPixmap pixmap);
+	void finished_rendering (const QObject * requester, Render::Request request,
+	                         Compressed * compressed, QPixmap pixmap);
 
 public:
 	void run (void) Q_DECL_OVERRIDE {
@@ -80,23 +86,30 @@ class SystemPrivate : public QObject {
 	/* Caching system (internals).
 	 * Stores compressed renders in a cache to avoid rerendering stuff later.
 	 * Rendering is done through Tasks in a QThreadPool.
+	 * 
+	 * being_rendered tracks ongoing renders, preventing double rendering.
 	 */
 	Q_OBJECT
 
 private:
 	System * parent_;
 	QCache<Request, Compressed> cache;
+	QSet<Request> being_rendered;
+	int prefetch_window_;
 
 public:
-	SystemPrivate (int cache_size_bytes, System * parent)
-	    : QObject (parent), parent_ (parent), cache (cache_size_bytes) {}
+	SystemPrivate (int cache_size_bytes, int prefetch_window, System * parent)
+	    : QObject (parent),
+	      parent_ (parent),
+	      cache (cache_size_bytes),
+	      prefetch_window_ (prefetch_window) {}
 
 	void request_render (const QObject * requester, const Request & request);
 
 private slots:
 	// "Render::Request" as Qt is not very namespace friendly
-	void rendering_finished (const QObject * requester, Render::Request request, Compressed * compressed,
-	                         QPixmap pixmap);
+	void rendering_finished (const QObject * requester, Render::Request request,
+	                         Compressed * compressed, QPixmap pixmap);
 };
 }
 

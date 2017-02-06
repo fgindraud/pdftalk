@@ -49,7 +49,8 @@ QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 
 // System impl
 
-System::System (int cache_size_bytes) : d_ (new SystemPrivate (cache_size_bytes, this)) {
+System::System (int cache_size_bytes, int prefetch_window)
+    : d_ (new SystemPrivate (cache_size_bytes, prefetch_window, this)) {
 	qRegisterMetaType<Request> (); // Request registration (once before use in connect)
 }
 
@@ -64,9 +65,10 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 		qDebug () << "from_cache" << request.page << request.size;
 		emit parent_->new_render (requester, request,
 		                          make_pixmap_from_compressed_render (*compressed_render));
-	} else {
+	} else if (!being_rendered.contains (request)) {
 		// Make new render (spawn a Task in a QThreadPool)
 		qDebug () << "render" << request.page << request.size;
+		being_rendered.insert (request);
 		auto task = new Task (requester, request);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
 		QThreadPool::globalInstance ()->start (task);
@@ -75,8 +77,9 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 
 void SystemPrivate::rendering_finished (const QObject * requester, Request request,
                                         Compressed * compressed, QPixmap pixmap) {
-	// When rendering has finished: store compressed, give pixmap
+	// When rendering has finished: store compressed, untrack, give pixmap
 	cache.insert (request, compressed, compressed->data.size ());
+	being_rendered.remove (request);
 	emit parent_->new_render (requester, request, pixmap);
 }
 }

@@ -48,7 +48,9 @@ class System : public QObject {
 	 * QObject * requester and the request struct let viewers identify their answers.
 	 *
 	 * Internally, the cost of rendering is reduced by caching (see render_internal.h).
+	 * Additionally, the pages next to the current one are pre-rendered.
 	 * cache_size_bytes sets the size of the cache in bytes.
+	 * prefetch_window controls the pre-rendering window (1 = next, ...)
 	 */
 	Q_OBJECT
 
@@ -56,7 +58,7 @@ private:
 	SystemPrivate * d_;
 
 public:
-	System (int cache_size_bytes);
+	System (int cache_size_bytes, int prefetch_window);
 
 signals:
 	void new_render (const QObject * requester, const Request & request, QPixmap render);
