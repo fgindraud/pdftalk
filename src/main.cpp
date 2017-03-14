@@ -93,6 +93,6 @@ int main (int argc, char * argv[]) {
 	WindowShifter windows{presentation_view, presenter_view};
 
 	// Init system
-	QTimer::singleShot (0, &control, &Controller::reset);
+	QTimer::singleShot (0, &control, SLOT (reset()));
 	return app.exec ();
 }

@@ -86,22 +86,22 @@ class SystemPrivate : public QObject {
 	/* Caching system (internals).
 	 * Stores compressed renders in a cache to avoid rerendering stuff later.
 	 * Rendering is done through Tasks in a QThreadPool.
-	 * 
+	 *
 	 * being_rendered tracks ongoing renders, preventing double rendering.
 	 */
 	Q_OBJECT
 
 private:
 	System * parent_;
-	QCache<Request, Compressed> cache;
-	QSet<Request> being_rendered;
-	int prefetch_window_;
+	QCache<Request, Compressed> cache_;
+	QSet<Request> being_rendered_;
+	const int prefetch_window_;
 
 public:
 	SystemPrivate (int cache_size_bytes, int prefetch_window, System * parent)
 	    : QObject (parent),
 	      parent_ (parent),
-	      cache (cache_size_bytes),
+	      cache_ (cache_size_bytes),
 	      prefetch_window_ (prefetch_window) {}
 
 	void request_render (const QObject * requester, const Request & request);
@@ -110,6 +110,9 @@ private slots:
 	// "Render::Request" as Qt is not very namespace friendly
 	void rendering_finished (const QObject * requester, Render::Request request,
 	                         Compressed * compressed, QPixmap pixmap);
+
+private:
+	void launch_render (const QObject * requester, const Request & request);
 };
 }
 

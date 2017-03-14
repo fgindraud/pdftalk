@@ -59,27 +59,49 @@ void System::request_render (const Request & request) {
 }
 
 void SystemPrivate::request_render (const QObject * requester, const Request & request) {
-	Compressed * compressed_render = cache.object (request);
+	// Handle request
+	Compressed * compressed_render = cache_.object (request);
 	if (compressed_render != nullptr) {
 		// Serve request from cache
 		qDebug () << "from_cache" << request.page << request.size;
 		emit parent_->new_render (requester, request,
 		                          make_pixmap_from_compressed_render (*compressed_render));
-	} else if (!being_rendered.contains (request)) {
+	} else {
 		// Make new render (spawn a Task in a QThreadPool)
-		qDebug () << "render" << request.page << request.size;
-		being_rendered.insert (request);
-		auto task = new Task (requester, request);
-		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
-		QThreadPool::globalInstance ()->start (task);
+		launch_render (requester, request);
+	}
+	/* Prefetch pages around the request.
+	 * We only need to launch renders, no need to give an answer as there is no request.
+	 */
+	// FIXME disable prefetch, look at weird renders requests when going backwards... (show page/role in renders)
+	int window_remaining = prefetch_window_;
+	const PageInfo * forward = request.page->next_transition_page ();
+	while (window_remaining > 0 && forward != nullptr) {
+		qDebug () << "prefetch" << forward << request.size;
+		Request prefetch{forward, request.size};
+		if (!cache_.contains (prefetch))
+			launch_render (requester, prefetch);
+		forward = forward->next_transition_page ();
+		window_remaining--;
 	}
 }
 
 void SystemPrivate::rendering_finished (const QObject * requester, Request request,
                                         Compressed * compressed, QPixmap pixmap) {
 	// When rendering has finished: store compressed, untrack, give pixmap
-	cache.insert (request, compressed, compressed->data.size ());
-	being_rendered.remove (request);
+	cache_.insert (request, compressed, compressed->data.size ());
+	being_rendered_.remove (request);
 	emit parent_->new_render (requester, request, pixmap);
+}
+
+void SystemPrivate::launch_render (const QObject * requester, const Request & request) {
+	// If not tracked: track, schedule render
+	if (!being_rendered_.contains (request)) {
+		qDebug () << "render" << request.page << request.size;
+		being_rendered_.insert (request);
+		auto task = new Task (requester, request);
+		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
+		QThreadPool::globalInstance ()->start (task);
+	}
 }
 }
