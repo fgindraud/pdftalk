@@ -20,6 +20,7 @@
 
 #include "action.h"
 
+#include <QDebug>
 #include <QString>
 #include <memory> // unique_ptr
 #include <poppler-qt5.h>
@@ -51,9 +52,10 @@ class PageInfo {
 private:
 	// Page info
 	std::unique_ptr<const Poppler::Page> poppler_page_;
-	qreal height_for_width_ratio_{0};
-	QString annotations_; // PDF annotations
-	int slide_index_{-1}; // User slide index, counting from 0
+	int page_index_;              // PDF document page index (from 0)
+	int slide_index_{-1};             // User slide index, counting from 0
+	qreal height_for_width_ratio_{0}; // Page aspect ratio, used by GUI
+	QString annotations_;             // PDF annotations
 	std::vector<std::unique_ptr<Action::Base>> actions_;
 
 	// Related page links (used for the presenter view)
@@ -62,15 +64,17 @@ private:
 	const PageInfo * next_slide_first_page_{nullptr};
 
 public:
-	PageInfo (Poppler::Page * page);
+	PageInfo (Poppler::Page * page, int index);
 
+	int page_index () const { return page_index_; }
 	int slide_index (void) const { return slide_index_; }
+	qreal height_for_width_ratio (void) const { return height_for_width_ratio_; }
 	const QString & annotations (void) const { return annotations_; }
+
 	const PageInfo * next_transition_page (void) const { return next_transition_page_; }
 	const PageInfo * previous_transition_page (void) const { return previous_transition_page_; }
 	const PageInfo * next_slide_first_page (void) const { return next_slide_first_page_; }
 
-	qreal height_for_width_ratio (void) const { return height_for_width_ratio_; }
 	QSize render_size (QSize box) const;
 	QImage render (QSize box) const;
 
@@ -88,6 +92,8 @@ private:
 	void init_annotations (void);
 	void init_actions (void);
 };
+
+QDebug operator<< (QDebug d, const PageInfo & page);
 
 class SlideInfo {
 private:

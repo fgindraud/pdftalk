@@ -17,6 +17,7 @@
 #include "document.h"
 #include "action.h"
 
+#include <QDebugStateSaver>
 #include <QFile>
 #include <QImage>
 #include <QTextStream>
@@ -24,7 +25,7 @@
 
 // PageInfo
 
-PageInfo::PageInfo (Poppler::Page * page) : poppler_page_ (page) {
+PageInfo::PageInfo (Poppler::Page * page, int index) : poppler_page_ (page), page_index_ (index) {
 	// precompute height_for_width_ratio
 	auto page_size_dots = poppler_page_->pageSizeF ();
 	if (!page_size_dots.isEmpty ())
@@ -140,6 +141,12 @@ const Action::Base * PageInfo::on_click (const QPointF & coord) const {
 	return nullptr;
 }
 
+QDebug operator<< (QDebug d, const PageInfo & page) {
+	QDebugStateSaver saver (d);
+	d.nospace () << "Page(p=" << page.page_index () << ", s=" << page.slide_index () << ")";
+	return d;
+}
+
 // SlideInfo
 
 // Document
@@ -155,6 +162,7 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 	document_->setRenderHint (Poppler::Document::Antialiasing, true);
 	document_->setRenderHint (Poppler::Document::TextAntialiasing, true);
 
+	// Create raw PageInfo structs
 	auto nb_pages = document_->numPages ();
 	if (nb_pages <= 0)
 		qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename));
@@ -163,7 +171,7 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 		auto p = document_->page (i);
 		if (p == nullptr)
 			qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
-		pages_.emplace_back (p);
+		pages_.emplace_back (p, i);
 	}
 
 	discover_document_structure ();

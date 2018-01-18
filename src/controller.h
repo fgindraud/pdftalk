@@ -111,7 +111,7 @@ public slots:
 	void go_to_page_index (int index) {
 		if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 			current_page_ = index;
-			qDebug () << "current_page" << index;
+			qDebug () << "current" << document_.page (current_page_);
 			timer_start ();
 			update_views ();
 		}
@@ -128,7 +128,7 @@ public slots:
 
 	// Action
 	void execute_action (const Action::Base * action) { action->execute (*this); }
-	
+
 	// Full reset, also used for init
 	void reset (void) {
 		current_page_ = 0;
