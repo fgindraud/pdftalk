@@ -76,13 +76,13 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 	// FIXME disable prefetch, look at weird renders requests when going backwards... (show page/role
 	// in renders)
 	int window_remaining = prefetch_window_;
-	const PageInfo * forward = request.page->next_transition_page ();
+	const PageInfo * forward = request.page->next_page ();
 	while (window_remaining > 0 && forward != nullptr) {
-		qDebug () << "prefetch" << *forward << request.size;
+		qDebug () << "prefetch  " << *forward << request.size;
 		Request prefetch{forward, request.size};
 		if (!cache_.contains (prefetch))
 			launch_render (requester, prefetch);
-		forward = forward->next_transition_page ();
+		forward = forward->next_page ();
 		window_remaining--;
 	}
 }
@@ -98,7 +98,7 @@ void SystemPrivate::rendering_finished (const QObject * requester, Request reque
 void SystemPrivate::launch_render (const QObject * requester, const Request & request) {
 	// If not tracked: track, schedule render
 	if (!being_rendered_.contains (request)) {
-		qDebug () << "render" << *request.page << request.size;
+		qDebug () << "render    " << *request.page << request.size;
 		being_rendered_.insert (request);
 		auto task = new Task (requester, request);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);

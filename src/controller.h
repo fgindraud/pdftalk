@@ -111,7 +111,7 @@ public slots:
 	void go_to_page_index (int index) {
 		if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 			current_page_ = index;
-			qDebug () << "current" << document_.page (current_page_);
+			qDebug () << "current   " << document_.page (current_page_);
 			timer_start ();
 			update_views ();
 		}

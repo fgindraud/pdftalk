@@ -184,6 +184,12 @@ void Document::discover_document_structure (void) {
 	slides_.emplace_back (0);
 	for (int page_index = 0; page_index < nb_pages (); ++page_index) {
 		auto & page = pages_[page_index];
+		// Link to previous page if it exists
+		if (page_index > 0) {
+			auto & prev = pages_[page_index - 1];
+			page.set_previous_page (&prev);
+			prev.set_next_page (&page);
+		}
 		// If label changed since last page, this is the first page of a new slide
 		auto label = page.poppler_page_->label ();
 		if (label != current_slide_label) {

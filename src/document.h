@@ -52,13 +52,15 @@ class PageInfo {
 private:
 	// Page info
 	std::unique_ptr<const Poppler::Page> poppler_page_;
-	int page_index_;              // PDF document page index (from 0)
+	int page_index_;                  // PDF document page index (from 0)
 	int slide_index_{-1};             // User slide index, counting from 0
 	qreal height_for_width_ratio_{0}; // Page aspect ratio, used by GUI
 	QString annotations_;             // PDF annotations
 	std::vector<std::unique_ptr<Action::Base>> actions_;
 
 	// Related page links (used for the presenter view)
+	const PageInfo * next_page_{nullptr};
+	const PageInfo * previous_page_{nullptr};
 	const PageInfo * next_transition_page_{nullptr};
 	const PageInfo * previous_transition_page_{nullptr};
 	const PageInfo * next_slide_first_page_{nullptr};
@@ -71,6 +73,8 @@ public:
 	qreal height_for_width_ratio (void) const { return height_for_width_ratio_; }
 	const QString & annotations (void) const { return annotations_; }
 
+	const PageInfo * next_page (void) const { return next_page_; }
+	const PageInfo * previous_page (void) const { return previous_page_; }
 	const PageInfo * next_transition_page (void) const { return next_transition_page_; }
 	const PageInfo * previous_transition_page (void) const { return previous_transition_page_; }
 	const PageInfo * next_slide_first_page (void) const { return next_slide_first_page_; }
@@ -84,6 +88,8 @@ private:
 	// Related page links editions by document
 	friend class Document;
 	void set_slide_index (int index) { slide_index_ = index; }
+	void set_next_page (const PageInfo * page) { next_page_ = page; }
+	void set_previous_page (const PageInfo * page) { previous_page_ = page; }
 	void set_next_transition_page (const PageInfo * page) { next_transition_page_ = page; }
 	void set_previous_transition_page (const PageInfo * page) { previous_transition_page_ = page; }
 	void set_next_slide_first_page (const PageInfo * page) { next_slide_first_page_ = page; }

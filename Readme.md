@@ -47,19 +47,29 @@ To generate text annotations for the presenter window, two options:
 Status
 ------
 
-This is at an alpha stage: it works but is limited...
+Beta stage: working, lacking features and maturity
 
 Todo:
 * PDF rendering
-	* Add prerendering, threading, etc...
-* Auto spread windows on monitors
+	* Done: threadpool rendering, prefetching the next pages on render
+	* Improved prefetch
+		* better pattern: currently, just prerender the next few pages
+		* add role information to render system
+		* add weights to roles (public screen = highest)
+		* settings for cache size
+		* backwards prefetching
+* Improve document structure info
+	* drop PDF annotations (not working) ?
+	* only use PageInfo + Document for indexing (rm SlideInfo ?)
+* Go to page n functionnality
 
 Maybe Todo:
-* Support for durations (no animations for now)
-* Support for Poppler Rotation flags (don't know when it matters)
+* Auto spread windows on monitors
 * Disable screensaver
 
 Unlikely Todo:
+* Support for durations (no animations for now)
+* Support for Poppler Rotation flags (don't know when it matters)
 * Movies
 * Transitions / animations
 
