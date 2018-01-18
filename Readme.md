@@ -42,6 +42,7 @@ To generate text annotations for the presenter window, two options:
 	* per page annotations
 	* annotations in the PDF document
 	* downside: `pdfcomment` package macros seem to add spaces in the document...
+	* `pdftalk` will hide the annotations on the slides, while displaying the text in the presenter screen
 
 Status
 ------
@@ -61,14 +62,13 @@ Maybe Todo:
 Unlikely Todo:
 * Movies
 * Transitions / animations
-* Clean support of pdf annotations
 
 License
 -------
 
 ```
 PDFTalk - PDF presentation tool
-Copyright (C) 2016 Francois Gindraud
+Copyright (C) 2016 - 2018 Francois Gindraud
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
