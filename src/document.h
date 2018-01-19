@@ -53,7 +53,7 @@
 class PageInfo {
 private:
 	// Page info
-	std::unique_ptr<const Poppler::Page> poppler_page_;
+	std::unique_ptr<Poppler::Page> poppler_page_;
 	int page_index_;                  // PDF document page index (from 0)
 	int slide_index_{-1};             // User slide index, counting from 0
 	qreal height_for_width_ratio_{0}; // Page aspect ratio, used by GUI
@@ -67,7 +67,7 @@ private:
 	const PageInfo * next_slide_first_page_{nullptr};
 
 public:
-	PageInfo (Poppler::Page * page, int index);
+	PageInfo (std::unique_ptr<Poppler::Page> page, int index);
 
 	// Non copiable / movable, to safely take references on them
 	PageInfo (const PageInfo &) = delete;
@@ -76,18 +76,21 @@ public:
 	PageInfo & operator= (PageInfo &&) = delete;
 
 	int page_index () const { return page_index_; }
-	int slide_index (void) const { return slide_index_; }
-	qreal height_for_width_ratio (void) const { return height_for_width_ratio_; }
+	int slide_index () const { return slide_index_; }
+	qreal height_for_width_ratio () const { return height_for_width_ratio_; }
 
-	const PageInfo * next_page (void) const { return next_page_; }
-	const PageInfo * previous_page (void) const { return previous_page_; }
-	const PageInfo * next_transition_page (void) const { return next_transition_page_; }
-	const PageInfo * previous_transition_page (void) const { return previous_transition_page_; }
-	const PageInfo * next_slide_first_page (void) const { return next_slide_first_page_; }
+	const PageInfo * next_page () const { return next_page_; }
+	const PageInfo * previous_page () const { return previous_page_; }
+	const PageInfo * next_transition_page () const { return next_transition_page_; }
+	const PageInfo * previous_transition_page () const { return previous_transition_page_; }
+	const PageInfo * next_slide_first_page () const { return next_slide_first_page_; }
 
-	QSize render_size (QSize box) const;
-	QImage render (QSize box) const;
+	QString label () const { return poppler_page_->label (); }
 
+	QSize render_size (QSize box) const; // Which render size can fit in box
+	QImage render (QSize box) const;     // Make render in box
+
+	// Which action is triggered by a click at relative [0,1]x[0,1] coords ?
 	const Action::Base * on_click (const QPointF & coord) const;
 
 private:
@@ -116,9 +119,10 @@ private:
 	}
 
 public:
-	SlideInfo (int first_page_index) : first_page_index_ (first_page_index) {}
-	int first_page_index (void) const { return first_page_index_; }
-	const QString & annotations (void) const { return annotations_; }
+	explicit SlideInfo (int first_page_index) : first_page_index_ (first_page_index) {}
+
+	int first_page_index () const { return first_page_index_; }
+	const QString & annotations () const { return annotations_; }
 };
 
 class Document {
@@ -135,20 +139,21 @@ class Document {
 private:
 	std::unique_ptr<Poppler::Document> document_;
 	std::vector<std::unique_ptr<PageInfo>> pages_;
-	std::vector<SlideInfo> slides_;
+	std::vector<std::unique_ptr<SlideInfo>> slides_;
 
 public:
 	explicit Document (const QString & filename);
 
-	int nb_pages (void) const { return pages_.size (); }
+	int nb_pages () const { return pages_.size (); }
 	const PageInfo & page (int page_index) const { return *pages_.at (page_index); }
 
-	int nb_slides (void) const { return slides_.size (); }
-	const SlideInfo & slide (int slide_index) const { return slides_.at (slide_index); }
+	int nb_slides () const { return slides_.size (); }
+	const SlideInfo & slide (int slide_index) const { return *slides_.at (slide_index); }
 
 private:
 	// Init stuff
 	PageInfo & page (int page_index) { return *pages_[page_index]; }
-	void discover_document_structure (void);
+	SlideInfo & slide (int slide_index) { return *slides_[slide_index]; }
+	void discover_document_structure ();
 	void read_annotations_from_file (const QString & pdfpc_filename);
 };

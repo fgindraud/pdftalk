@@ -36,7 +36,7 @@ public:
 	}
 
 private slots:
-	void toogle_fullscreen (void) { setWindowState (windowState () ^ Qt::WindowFullScreen); }
+	void toogle_fullscreen () { setWindowState (windowState () ^ Qt::WindowFullScreen); }
 
 private:
 	void closeEvent (QCloseEvent *) Q_DECL_OVERRIDE { QApplication::quit (); }
@@ -76,13 +76,13 @@ public:
 	}
 
 private slots:
-	void shift_content (void) {
+	void shift_content () {
 		current_shift_ = (current_shift_ + 1) % nb_window;
 		set_content_position ();
 	}
 
 private:
-	void set_content_position (void) {
+	void set_content_position () {
 		// De-parent contents
 		for (auto & c : contents_) {
 			if (c->parentWidget () != nullptr) {

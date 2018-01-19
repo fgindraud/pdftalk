@@ -84,7 +84,8 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 	}
 }
 
-PageInfo::PageInfo (Poppler::Page * page, int index) : poppler_page_ (page), page_index_ (index) {
+PageInfo::PageInfo (std::unique_ptr<Poppler::Page> page, int index)
+    : poppler_page_ (std::move (page)), page_index_ (index) {
 	// precompute height_for_width_ratio
 	auto page_size_dots = poppler_page_->pageSizeF ();
 	if (!page_size_dots.isEmpty ())
@@ -136,7 +137,7 @@ QDebug operator<< (QDebug d, const PageInfo & page) {
 
 Document::Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
 	// Check document has been opened
-	if (document_ == nullptr)
+	if (!document_)
 		qFatal ("Poppler: unable to open document \%s\"", qPrintable (filename));
 	if (document_->isLocked ())
 		qFatal ("Poppler: document is locked \"%s\"", qPrintable (filename));
@@ -151,20 +152,20 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 		qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename));
 	pages_.reserve (nb_pages);
 	for (int i = 0; i < nb_pages; ++i) {
-		auto p = document_->page (i);
-		if (p == nullptr)
+		auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
+		if (!p)
 			qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
-		pages_.emplace_back (make_unique<PageInfo> (p, i));
+		pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
 	}
 
 	discover_document_structure ();
 	read_annotations_from_file (filename + "pc"); // TODO config point
 }
 
-void Document::discover_document_structure (void) {
+void Document::discover_document_structure () {
 	// Parse all pages, and create SlideInfo structures each time we "change of slide"
-	QString current_slide_label = page (0).poppler_page_->label ();
-	slides_.emplace_back (0);
+	QString current_slide_label = page (0).label ();
+	slides_.emplace_back (make_unique<SlideInfo> (0));
 	for (int page_index = 0; page_index < nb_pages (); ++page_index) {
 		auto & current = page (page_index);
 		// Link to previous page if it exists
@@ -174,13 +175,13 @@ void Document::discover_document_structure (void) {
 			prev.set_next_page (&current);
 		}
 		// If label changed since last page, this is the first page of a new slide
-		auto label = current.poppler_page_->label ();
+		auto label = current.label ();
 		if (label != current_slide_label) {
 			// Set "next first page of slide" links of previous pages
-			for (int index = slides_.back ().first_page_index (); index < page_index; ++index)
+			for (int index = slides_.back ()->first_page_index (); index < page_index; ++index)
 				page (index).set_next_slide_first_page (&current);
 			// Append to slide list
-			slides_.emplace_back (page_index);
+			slides_.emplace_back (make_unique<SlideInfo> (page_index));
 			current_slide_label = label;
 		}
 		// Update slide numbering
@@ -233,7 +234,7 @@ void Document::read_annotations_from_file (const QString & pdfpc_filename) {
 					          current_slide_index, nb_slides (), qPrintable (pdfpc_filename), line_index);
 					return;
 				}
-				slides_[current_slide_index].append_annotation (line);
+				slide (current_slide_index).append_annotation (line);
 			}
 		}
 	}

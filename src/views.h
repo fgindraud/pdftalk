@@ -45,7 +45,7 @@ public:
 
 	// Layouting info
 	int heightForWidth (int w) const Q_DECL_OVERRIDE;
-	QSize sizeHint (void) const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
+	QSize sizeHint () const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
 
 	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (); }
 	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_OVERRIDE;
@@ -68,7 +68,7 @@ public slots:
 	}
 
 private:
-	void update_label (void) {
+	void update_label () {
 		static constexpr int pixmap_size_limit_px = 10;
 		clear (); // Remove old pixmap
 		// Ask for a new pixmap only if useful
@@ -104,10 +104,10 @@ private:
 public:
 	explicit PresenterView (int nb_slides, QWidget * parent = nullptr);
 
-	PageViewer * current_page_viewer (void) const { return current_page_; }
-	PageViewer * next_slide_first_page_viewer (void) const { return next_slide_first_page_; }
-	PageViewer * next_transition_page_viewer (void) const { return next_transition_page_; }
-	PageViewer * previous_transition_page_viewer (void) const { return previous_transition_page_; }
+	PageViewer * current_page_viewer () const { return current_page_; }
+	PageViewer * next_slide_first_page_viewer () const { return next_slide_first_page_; }
+	PageViewer * next_transition_page_viewer () const { return next_transition_page_; }
+	PageViewer * previous_transition_page_viewer () const { return previous_transition_page_; }
 
 public slots:
 

@@ -74,7 +74,7 @@ signals:
 	                         Compressed * compressed, QPixmap pixmap);
 
 public:
-	void run (void) Q_DECL_OVERRIDE {
+	void run () Q_DECL_OVERRIDE {
 		auto result = make_render (request_);
 		emit finished_rendering (requester_, request_, result.first, result.second);
 	}

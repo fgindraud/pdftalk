@@ -44,11 +44,11 @@ signals:
 	void update (bool paused, QString time_text);
 
 public slots:
-	void start (void) {
+	void start () {
 		if (!timer_.isActive ())
 			start_or_resume_timing ();
 	}
-	void toggle_pause (void) {
+	void toggle_pause () {
 		if (timer_.isActive ()) {
 			timer_.stop ();
 			accumulated_ = accumulated_.addMSecs (last_resume_.elapsed ());
@@ -57,21 +57,21 @@ public slots:
 			start_or_resume_timing ();
 		}
 	}
-	void reset (void) {
+	void reset () {
 		timer_.stop ();
 		accumulated_ = QTime{0, 0, 0};
 		emit_update (); // Everything changed
 	}
 
 private:
-	void emit_update (void) {
+	void emit_update () {
 		QTime total = accumulated_;
 		if (timer_.isActive ())
 			total = total.addMSecs (last_resume_.elapsed ());
 		emit update (!timer_.isActive (), total.toString (tr ("HH:mm:ss")));
 	}
 	void timerEvent (QTimerEvent *) Q_DECL_OVERRIDE { emit_update (); }
-	void start_or_resume_timing (void) {
+	void start_or_resume_timing () {
 		timer_.start (1000, this); // FIXME can cause misticks if too small...
 		last_resume_.start ();
 		emit_update (); // Pause status changed
@@ -114,28 +114,28 @@ public slots:
 			update_views ();
 		}
 	}
-	void go_to_next_page (void) { go_to_page_index (current_page_ + 1); }
-	void go_to_previous_page (void) { go_to_page_index (current_page_ - 1); }
-	void go_to_first_page (void) { go_to_page_index (0); }
-	void go_to_last_page (void) { go_to_page_index (document_.nb_pages () - 1); }
+	void go_to_next_page () { go_to_page_index (current_page_ + 1); }
+	void go_to_previous_page () { go_to_page_index (current_page_ - 1); }
+	void go_to_first_page () { go_to_page_index (0); }
+	void go_to_last_page () { go_to_page_index (document_.nb_pages () - 1); }
 
 	// Timer control
-	void timer_start (void) { timer_.start (); }
-	void timer_toggle_pause (void) { timer_.toggle_pause (); }
-	void timer_reset (void) { timer_.reset (); }
+	void timer_start () { timer_.start (); }
+	void timer_toggle_pause () { timer_.toggle_pause (); }
+	void timer_reset () { timer_.reset (); }
 
 	// Action
 	void execute_action (const Action::Base * action) { action->execute (*this); }
 
 	// Full reset, also used for init
-	void reset (void) {
+	void reset () {
 		current_page_ = 0;
 		update_views ();
 		timer_reset ();
 	}
 
 private:
-	void update_views (void) {
+	void update_views () {
 		const auto & page = document_.page (current_page_);
 		emit current_page_changed (&page);
 		emit next_slide_first_page_changed (page.next_slide_first_page ());
