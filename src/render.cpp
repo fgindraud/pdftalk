@@ -47,6 +47,10 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 	return d;
 }
 
+// Render Request
+
+Request::Request (const Info & info, const QSize & box) : Info (info), box_size_ (box) {}
+
 // Rendering, Compressing / Uncompressing primitives
 
 // FIXME std::up
@@ -101,8 +105,7 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 	/* Prefetch pages around the request.
 	 * We only need to launch renders, no need to give an answer as there is no request.
 	 * FIXME fix, improve, use role and change context to decide prefetching
-	 * do not prefetch if page do not resolve to the same size !
-	 * use render::Info stuff
+	 * We have the box (Request, not just Info) to pre render the next slides.
 	 */
 	/*int window_remaining = prefetch_window_;
 	const PageInfo * forward = request.page->next_page ();

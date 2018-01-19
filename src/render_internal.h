@@ -85,6 +85,7 @@ class SystemPrivate : public QObject {
 	 * Stores compressed renders in a cache to avoid rerendering stuff later.
 	 * Rendering is done through Tasks in a QThreadPool.
 	 *
+	 * 
 	 * being_rendered tracks ongoing renders, preventing double rendering.
 	 */
 	Q_OBJECT

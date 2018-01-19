@@ -36,15 +36,21 @@ PageViewer::PageViewer (QWidget * parent) : QLabel (parent) {
 }
 
 int PageViewer::heightForWidth (int w) const {
-	if (render_.page () == nullptr) {
+	if (render_.isNull ()) {
 		return QLabel::heightForWidth (w);
 	} else {
 		return render_.page ()->height_for_width_ratio () * w;
 	}
 }
+QSize PageViewer::sizeHint () const {
+	return {width (), heightForWidth (width ())};
+}
 
+void PageViewer::resizeEvent (QResizeEvent *) {
+	update_label (render_.page ());
+}
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
-	if (event->button () == Qt::LeftButton && !size ().isEmpty () && render_.page () != nullptr) {
+	if (event->button () == Qt::LeftButton && !size ().isEmpty () && !render_.isNull ()) {
 		// Determine pixmap position (centered)
 		auto label_size = size ();
 		auto pixmap_size = render_.size ();
@@ -59,6 +65,27 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 		if (action != nullptr)
 			emit action_activated (action);
 	}
+}
+
+void PageViewer::change_page (const PageInfo * new_page) {
+	if (new_page != render_.page ())
+		update_label (new_page);
+}
+void PageViewer::receive_pixmap (const QObject * requester, const Render::Info & render_info,
+                                 QPixmap pixmap) {
+	// Filter to only use the requested pixmaps
+	if (requester == this && render_info == render_)
+		setPixmap (pixmap);
+}
+
+void PageViewer::update_label (const PageInfo * new_page) {
+	render_ = Render::Info{new_page, size ()};
+
+	static constexpr int pixmap_size_limit_px = 10;
+	clear (); // Remove old pixmap
+	// Ask for a new pixmap only if useful
+	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px)
+		emit request_render (Render::Request{render_, size ()});
 }
 
 // PresentationView

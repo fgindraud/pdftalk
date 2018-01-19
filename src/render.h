@@ -27,6 +27,7 @@ namespace Render {
 
 /* Info represent a render metadata.
  * It is composed of a render size, and the selected page.
+ * A "null" render represents invalid metadata (no page / zero size).
  *
  * The Info constructor accept any size: it will be shrunk to the biggest fitting render size.
  * Info is comparable / hashable to enable use as a hash table key (render system cache).
@@ -42,16 +43,27 @@ public:
 
 	const PageInfo * page () const noexcept { return page_; }
 	const QSize & size () const noexcept { return size_; }
-	bool isNull () const noexcept { return page () == nullptr; } // Undef render
+	bool isNull () const noexcept { return page () == nullptr || size ().isNull (); }
 };
 bool operator== (const Info & a, const Info & b);
 uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
-// Represent a render request (page + size)
-struct Request : public Info {
-	using Info::Info; // FIXME Temporary
-	Request (const Info & i) : Info (i) {}
+/* Represent a render request comming from one of the views.
+ * A view will request a render of a specific page, to fit within the view space.
+ *
+ * The request will contain the actual render info (Info).
+ * It also contains the box size: useful for prefetching.
+ */
+class Request : public Info {
+private:
+	QSize box_size_{};
+
+public:
+	Request () = default; // Required by Qt Moc, should not be used otherwise
+	Request (const Info & info, const QSize & box);
+
+	const QSize & box_size () const noexcept { return box_size_; }
 };
 
 class SystemPrivate;

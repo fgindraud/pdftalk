@@ -46,9 +46,9 @@ public:
 
 	// Layouting info
 	int heightForWidth (int w) const Q_DECL_OVERRIDE;
-	QSize sizeHint () const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
+	QSize sizeHint () const Q_DECL_OVERRIDE;
 
-	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (render_.page ()); }
+	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE;
 	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_OVERRIDE;
 
 signals:
@@ -56,27 +56,11 @@ signals:
 	void request_render (Render::Request request);
 
 public slots:
-	void change_page (const PageInfo * new_page) {
-		if (new_page != render_.page ())
-			update_label (new_page);
-	}
-	void receive_pixmap (const QObject * requester, const Render::Info & render_info, QPixmap pixmap) {
-		// Filter to only use the requested pixmaps
-		if (requester == this && render_info == render_)
-			setPixmap (pixmap);
-	}
+	void change_page (const PageInfo * new_page);
+	void receive_pixmap (const QObject * requester, const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_page) {
-		render_ = Render::Info{new_page, size ()};
-
-		static constexpr int pixmap_size_limit_px = 10;
-		clear (); // Remove old pixmap
-		// Ask for a new pixmap only if useful
-		if (render_.page () != nullptr && width () >= pixmap_size_limit_px &&
-		    height () >= pixmap_size_limit_px)
-			emit request_render (Render::Request(render_)); // FIXME
-	}
+	void update_label (const PageInfo * new_page);
 };
 
 class PresentationView : public PageViewer {
