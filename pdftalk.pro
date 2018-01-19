@@ -8,6 +8,7 @@ CONFIG(release, debug|release): DEFINES += QT_NO_DEBUG_OUTPUT
 
 QT += core widgets
 HEADERS += \
+	src/utils.h \
 	src/action.h \
 	src/document.h \
 	src/render.h \

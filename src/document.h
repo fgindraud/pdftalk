@@ -47,7 +47,6 @@
  * - the pdf document, per page (stored in the PageInfo)
  * - the pdfpc text file, per slide (stored in Document::SlideInfo)
  */
-
 class PageInfo {
 private:
 	// Page info
@@ -67,6 +66,12 @@ private:
 
 public:
 	PageInfo (Poppler::Page * page, int index);
+
+	// Non copiable / movable, to safely take references on them
+	PageInfo (const PageInfo &) = delete;
+	PageInfo (PageInfo &&) = delete;
+	PageInfo & operator= (const PageInfo &) = delete;
+	PageInfo & operator= (PageInfo &&) = delete;
 
 	int page_index () const { return page_index_; }
 	int slide_index (void) const { return slide_index_; }
@@ -122,6 +127,8 @@ public:
 class Document {
 	/* Represents an opened pdf document.
 	 * The document is represented as a list of PageInfo objects which represents the document pages.
+	 * All PageInfo objects are owned by the Document object.
+	 * A Document must contains at least one page.
 	 *
 	 * Additionnaly it stores info for each slide (group of pages):
 	 * - first page, to allow seeking in the presentation.
@@ -130,20 +137,21 @@ class Document {
 
 private:
 	std::unique_ptr<Poppler::Document> document_;
-	std::vector<PageInfo> pages_;   // size() gives page number
-	std::vector<SlideInfo> slides_; // size() gives slide number
+	std::vector<std::unique_ptr<PageInfo>> pages_;
+	std::vector<SlideInfo> slides_;
 
 public:
 	explicit Document (const QString & filename);
 
 	int nb_pages (void) const { return pages_.size (); }
-	int nb_slides (void) const { return slides_.size (); }
+	const PageInfo & page (int page_index) const { return *pages_.at (page_index); }
 
-	const PageInfo & page (int page_index) const { return pages_.at (page_index); }
+	int nb_slides (void) const { return slides_.size (); }
 	const SlideInfo & slide (int slide_index) const { return slides_.at (slide_index); }
 
 private:
 	// Init stuff
+	PageInfo & page (int page_index) { return *pages_[page_index]; }
 	void discover_document_structure (void);
 	void read_annotations_from_file (const QString & pdfpc_filename);
 };

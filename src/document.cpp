@@ -16,6 +16,7 @@
  */
 #include "document.h"
 #include "action.h"
+#include "utils.h"
 
 #include <QDebugStateSaver>
 #include <QFile>
@@ -163,7 +164,7 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 	document_->setRenderHint (Poppler::Document::TextAntialiasing, true);
 
 	// Create raw PageInfo structs
-	auto nb_pages = document_->numPages ();
+	auto nb_pages = static_cast<int> (document_->numPages ());
 	if (nb_pages <= 0)
 		qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename));
 	pages_.reserve (nb_pages);
@@ -171,44 +172,44 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 		auto p = document_->page (i);
 		if (p == nullptr)
 			qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
-		pages_.emplace_back (p, i);
+		pages_.emplace_back (make_unique<PageInfo> (p, i));
 	}
 
 	discover_document_structure ();
-	read_annotations_from_file (filename + "pc");
+	read_annotations_from_file (filename + "pc"); // TODO config point
 }
 
 void Document::discover_document_structure (void) {
 	// Parse all pages, and create SlideInfo structures each time we "change of slide"
-	QString current_slide_label = pages_[0].poppler_page_->label ();
+	QString current_slide_label = page (0).poppler_page_->label ();
 	slides_.emplace_back (0);
 	for (int page_index = 0; page_index < nb_pages (); ++page_index) {
-		auto & page = pages_[page_index];
+		auto & current = page (page_index);
 		// Link to previous page if it exists
 		if (page_index > 0) {
-			auto & prev = pages_[page_index - 1];
-			page.set_previous_page (&prev);
-			prev.set_next_page (&page);
+			auto & prev = page (page_index - 1);
+			current.set_previous_page (&prev);
+			prev.set_next_page (&current);
 		}
 		// If label changed since last page, this is the first page of a new slide
-		auto label = page.poppler_page_->label ();
+		auto label = current.poppler_page_->label ();
 		if (label != current_slide_label) {
 			// Set "next first page of slide" links of previous pages
 			for (int index = slides_.back ().first_page_index (); index < page_index; ++index)
-				pages_[index].set_next_slide_first_page (&page);
+				page (index).set_next_slide_first_page (&current);
 			// Append to slide list
 			slides_.emplace_back (page_index);
 			current_slide_label = label;
 		}
 		// Update slide numbering
 		int current_slide_index = slides_.size () - 1;
-		page.set_slide_index (current_slide_index);
+		current.set_slide_index (current_slide_index);
 		// Update transition links with previous page
 		if (page_index > 0) {
-			auto & previous_page = pages_[page_index - 1];
-			if (previous_page.slide_index () == current_slide_index) {
-				previous_page.set_next_transition_page (&page);
-				page.set_previous_transition_page (&previous_page);
+			auto & prev = page (page_index - 1);
+			if (prev.slide_index () == current_slide_index) {
+				prev.set_next_transition_page (&current);
+				current.set_previous_transition_page (&prev);
 			}
 		}
 	}
