@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef VIEWS_H
-#define VIEWS_H
 
 #include "document.h"
 #include "render.h"
@@ -119,5 +117,3 @@ public slots:
 	void change_time (bool paused, const QString & new_time_text);
 	void change_annotations (QString new_annotations) { annotations_->setText (new_annotations); }
 };
-
-#endif

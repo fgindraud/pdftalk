@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef RENDER_INTERNAL_H
-#define RENDER_INTERNAL_H
 
 #include "render.h"
 
@@ -114,6 +112,4 @@ private slots:
 private:
 	void launch_render (const QObject * requester, const Request & request);
 };
-}
-
-#endif
+} // namespace Render

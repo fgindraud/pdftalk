@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef DOCUMENT_H
-#define DOCUMENT_H
 
 #include "action.h"
 
@@ -155,5 +153,3 @@ private:
 	void discover_document_structure (void);
 	void read_annotations_from_file (const QString & pdfpc_filename);
 };
-
-#endif

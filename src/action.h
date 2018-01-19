@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef ACTION_H
-#define ACTION_H
 
 #include <QRect>
 #include <QString>
@@ -80,6 +78,4 @@ public:
 	PageIndex (int index) : index_ (index) {}
 	void execute (Controller & controller) const Q_DECL_OVERRIDE;
 };
-}
-
-#endif
+} // namespace Action

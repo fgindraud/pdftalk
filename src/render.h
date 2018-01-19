@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef RENDER_H
-#define RENDER_H
 
 #include "document.h"
 
@@ -66,8 +64,6 @@ signals:
 public slots:
 	void request_render (const Request & request);
 };
-}
+} // namespace Render
 
 Q_DECLARE_METATYPE (Render::Request);
-
-#endif

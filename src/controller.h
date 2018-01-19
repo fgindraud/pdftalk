@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
 
 #include "action.h"
 #include "document.h"
@@ -177,5 +175,3 @@ inline void add_shortcuts_to_widget (Controller & c, QWidget * widget) {
 		QObject::connect (sc, &QShortcut::activated, &c, &Controller::timer_reset);
 	}
 }
-
-#endif
