@@ -55,8 +55,9 @@ void PageInfo::init_annotations (void) {
 }
 
 void PageInfo::init_actions (void) {
-	for (auto link : poppler_page_->links ()) {
-		Action::Base * new_action = nullptr;
+	// Links does not say that we get ownership of the Link* objects... do not delete
+	for (const auto * link : poppler_page_->links ()) {
+		std::unique_ptr<Action::Base> new_action{nullptr};
 		// Build an action if it matches the supported types
 		using PL = Poppler::Link;
 		switch (link->linkType ()) {
@@ -64,7 +65,7 @@ void PageInfo::init_actions (void) {
 			auto p = dynamic_cast<const Poppler::LinkGoto *> (link);
 			if (!p->isExternal ()) {
 				auto page_index = p->destination ().pageNumber () - 1;
-				new_action = new Action::PageIndex (page_index);
+				new_action = make_unique<Action::PageIndex> (page_index);
 			}
 		} break;
 		case PL::Action: {
@@ -74,19 +75,19 @@ void PageInfo::init_actions (void) {
 			case PA::Quit:
 			case PA::EndPresentation:
 			case PA::Close:
-				new_action = new Action::Quit;
+				new_action = make_unique<Action::Quit> ();
 				break;
 			case PA::PageNext:
-				new_action = new Action::PageNext;
+				new_action = make_unique<Action::PageNext> ();
 				break;
 			case PA::PagePrev:
-				new_action = new Action::PagePrevious;
+				new_action = make_unique<Action::PagePrevious> ();
 				break;
 			case PA::PageFirst:
-				new_action = new Action::PageFirst;
+				new_action = make_unique<Action::PageFirst> ();
 				break;
 			case PA::PageLast:
-				new_action = new Action::PageLast;
+				new_action = make_unique<Action::PageLast> ();
 				break;
 			default:
 				// Not handled: History{Forward/Back}, GoToPage, Find, Print
@@ -96,18 +97,17 @@ void PageInfo::init_actions (void) {
 		} break;
 		case PL::Browse: {
 			auto p = dynamic_cast<const Poppler::LinkBrowse *> (link);
-			new_action = new Action::Browser (p->url ());
+			new_action = make_unique<Action::Browser> (p->url ());
 		} break;
 		default:
 			// Not handled: Execute, Sound, Movie, Rendition, JavaScript
 			break;
 		}
 		// If we build one, add it to list
-		if (new_action != nullptr) {
+		if (new_action) {
 			new_action->set_rect (link->linkArea ().normalized ());
-			actions_.emplace_back (new_action);
+			actions_.emplace_back (std::move (new_action));
 		}
-		delete link;
 	}
 }
 

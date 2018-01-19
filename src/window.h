@@ -62,8 +62,8 @@ private:
 	int current_shift_{0};
 
 public:
-	template <typename... Args>
-	explicit WindowShifter (Args &&... args) : contents_{std::forward<Args> (args)...} {
+	template <typename... Widgets>
+	explicit WindowShifter (const Widgets &... widgets) : contents_{widgets...} {
 		for (auto & w : windows_) {
 			// Swap shortcut
 			auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);
