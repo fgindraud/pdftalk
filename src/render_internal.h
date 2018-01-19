@@ -53,7 +53,7 @@ struct Compressed {
 };
 
 // Rendering, Compressing / Uncompressing primitives
-std::pair<Compressed *, QPixmap> make_render (const Request & request);
+std::pair<Compressed *, QPixmap> make_render (const Info & render_info);
 QPixmap make_pixmap_from_compressed_render (const Compressed & render);
 
 class Task : public QObject, public QRunnable {
@@ -62,21 +62,21 @@ class Task : public QObject, public QRunnable {
 
 private:
 	const QObject * requester_;
-	const Request request_;
+	const Info render_info_;
 
 public:
-	Task (const QObject * requester, const Request & request)
-	    : requester_ (requester), request_ (request) {}
+	Task (const QObject * requester, const Info & render_info)
+	    : requester_ (requester), render_info_ (render_info) {}
 
 signals:
-	// "Render::Request" as Qt is not very namespace friendly
-	void finished_rendering (const QObject * requester, Render::Request request,
+	// "Render::Info" as Qt is not very namespace friendly
+	void finished_rendering (const QObject * requester, Render::Info render_info,
 	                         Compressed * compressed, QPixmap pixmap);
 
 public:
 	void run () Q_DECL_OVERRIDE {
-		auto result = make_render (request_);
-		emit finished_rendering (requester_, request_, result.first, result.second);
+		auto result = make_render (render_info_);
+		emit finished_rendering (requester_, render_info_, result.first, result.second);
 	}
 };
 
@@ -91,8 +91,8 @@ class SystemPrivate : public QObject {
 
 private:
 	System * parent_;
-	QCache<Request, Compressed> cache_;
-	QSet<Request> being_rendered_;
+	QCache<Info, Compressed> cache_;
+	QSet<Info> being_rendered_;
 	const int prefetch_window_;
 
 public:
@@ -105,11 +105,11 @@ public:
 	void request_render (const QObject * requester, const Request & request);
 
 private slots:
-	// "Render::Request" as Qt is not very namespace friendly
-	void rendering_finished (const QObject * requester, Render::Request request,
+	// "Render::Info" as Qt is not very namespace friendly
+	void rendering_finished (const QObject * requester, Render::Info render_info,
 	                         Compressed * compressed, QPixmap pixmap);
 
 private:
-	void launch_render (const QObject * requester, const Request & request);
+	void launch_render (const QObject * requester, const Info & render_info);
 };
 } // namespace Render

@@ -36,18 +36,18 @@ PageViewer::PageViewer (QWidget * parent) : QLabel (parent) {
 }
 
 int PageViewer::heightForWidth (int w) const {
-	if (page_ == nullptr) {
+	if (render_.page () == nullptr) {
 		return QLabel::heightForWidth (w);
 	} else {
-		return page_->height_for_width_ratio () * w;
+		return render_.page ()->height_for_width_ratio () * w;
 	}
 }
 
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
-	if (event->button () == Qt::LeftButton && !size ().isEmpty () && page_ != nullptr) {
+	if (event->button () == Qt::LeftButton && !size ().isEmpty () && render_.page () != nullptr) {
 		// Determine pixmap position (centered)
 		auto label_size = size ();
-		auto pixmap_size = page_->render_size (label_size);
+		auto pixmap_size = render_.size ();
 		auto pixmap_offset_in_label = (label_size - pixmap_size) / 2;
 		// Click position in pixmap
 		auto click_pos_01 =
@@ -55,7 +55,7 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 		                 static_cast<qreal> (pixmap_size.width ()),
 		             static_cast<qreal> (event->y () - pixmap_offset_in_label.height ()) /
 		                 static_cast<qreal> (pixmap_size.height ()));
-		auto action = page_->on_click (click_pos_01);
+		auto action = render_.page ()->on_click (click_pos_01);
 		if (action != nullptr)
 			emit action_activated (action);
 	}

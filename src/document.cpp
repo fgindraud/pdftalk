@@ -94,7 +94,7 @@ PageInfo::PageInfo (std::unique_ptr<Poppler::Page> page, int index)
 	add_page_actions (actions_, *poppler_page_);
 }
 
-QSize PageInfo::render_size (QSize box) const {
+QSize PageInfo::render_size (const QSize & box) const {
 	// Computes the size we can render page in the given box
 	const auto page_size_dots = poppler_page_->pageSizeF ();
 	if (page_size_dots.isEmpty ())
@@ -105,7 +105,7 @@ QSize PageInfo::render_size (QSize box) const {
 	return (page_size_dots * pix_dots_ratio).toSize ();
 }
 
-QImage PageInfo::render (QSize box) const {
+QImage PageInfo::render (const QSize & box) const {
 	// Render the page in the box
 	const auto page_size_dots = poppler_page_->pageSizeF ();
 	if (page_size_dots.isEmpty ())

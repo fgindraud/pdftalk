@@ -18,24 +18,41 @@
 
 #include "document.h"
 
+#include <QDebug>
 #include <QHash>
 #include <QPixmap>
 #include <QSize>
 
 namespace Render {
 
-// Represent a render request (page + size)
-struct Request {
-	const PageInfo * page;
-	QSize size;
+/* Info represent a render metadata.
+ * It is composed of a render size, and the selected page.
+ *
+ * The Info constructor accept any size: it will be shrunk to the biggest fitting render size.
+ * Info is comparable / hashable to enable use as a hash table key (render system cache).
+ */
+class Info {
+private:
+	const PageInfo * page_{nullptr};
+	QSize size_{};
+
+public:
+	Info () = default;
+	Info (const PageInfo * p, const QSize & box);
+
+	const PageInfo * page () const noexcept { return page_; }
+	const QSize & size () const noexcept { return size_; }
+	bool isNull () const noexcept { return page () == nullptr; } // Undef render
 };
-inline bool operator== (const Request & a, const Request & b) {
-	return a.page == b.page && a.size == b.size;
-}
-inline uint qHash (const Request & r, uint seed = 0) {
-	using ::qHash; // Have access to Qt's basic qHash
-	return qHash (r.page, seed) ^ qHash (r.size.width (), seed) ^ qHash (r.size.height (), seed);
-}
+bool operator== (const Info & a, const Info & b);
+uint qHash (const Info & info, uint seed = 0);
+QDebug operator<< (QDebug d, const Info & render_info);
+
+// Represent a render request (page + size)
+struct Request : public Info {
+	using Info::Info; // FIXME Temporary
+	Request (const Info & i) : Info (i) {}
+};
 
 class SystemPrivate;
 
@@ -59,11 +76,12 @@ public:
 	System (int cache_size_bytes, int prefetch_window);
 
 signals:
-	void new_render (const QObject * requester, const Request & request, QPixmap render);
+	void new_render (const QObject * requester, const Info & render_info, QPixmap render_data);
 
 public slots:
 	void request_render (const Request & request);
 };
 } // namespace Render
 
+Q_DECLARE_METATYPE (Render::Info);
 Q_DECLARE_METATYPE (Render::Request);

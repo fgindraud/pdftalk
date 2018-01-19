@@ -87,8 +87,8 @@ public:
 
 	QString label () const { return poppler_page_->label (); }
 
-	QSize render_size (QSize box) const; // Which render size can fit in box
-	QImage render (QSize box) const;     // Make render in box
+	QSize render_size (const QSize & box) const; // Which render size can fit in box
+	QImage render (const QSize & box) const;     // Make render in box
 
 	// Which action is triggered by a click at relative [0,1]x[0,1] coords ?
 	const Action::Base * on_click (const QPointF & coord) const;

@@ -22,11 +22,37 @@
 #include <QThreadPool>
 
 namespace Render {
+// Render Info
+
+Info::Info (const PageInfo * p, const QSize & box) : page_ (p) {
+	if (p != nullptr)
+		size_ = p->render_size (box);
+}
+
+bool operator== (const Info & a, const Info & b) {
+	return a.page () == b.page () && a.size () == b.size ();
+}
+uint qHash (const Info & info, uint seed) {
+	using ::qHash; // Have access to Qt's basic qHash
+	return qHash (info.page (), seed) ^ qHash (info.size ().width (), seed) ^
+	       qHash (info.size ().height (), seed);
+}
+
+QDebug operator<< (QDebug d, const Info & render_info) {
+	if (!render_info.isNull ()) {
+		d << *render_info.page () << render_info.size ();
+	} else {
+		d << "Render::Info()";
+	}
+	return d;
+}
+
 // Rendering, Compressing / Uncompressing primitives
 
-std::pair<Compressed *, QPixmap> make_render (const Request & request) {
+// FIXME std::up
+std::pair<Compressed *, QPixmap> make_render (const Info & render_info) {
 	// Renders, and returns both the pixmap and the compressed image
-	QImage image = request.page->render (request.size);
+	QImage image = render_info.page ()->render (render_info.size ());
 	auto compressed_data = qCompress (image.bits (), image.byteCount ());
 	auto compressed_render =
 	    new Compressed{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
@@ -51,7 +77,9 @@ QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 
 System::System (int cache_size_bytes, int prefetch_window)
     : d_ (new SystemPrivate (cache_size_bytes, prefetch_window, this)) {
-	qRegisterMetaType<Request> (); // Request registration (once before use in connect)
+	// Request registration (once before use in connect)
+	qRegisterMetaType<Info> ();
+	qRegisterMetaType<Request> ();
 }
 
 void System::request_render (const Request & request) {
@@ -60,10 +88,10 @@ void System::request_render (const Request & request) {
 
 void SystemPrivate::request_render (const QObject * requester, const Request & request) {
 	// Handle request
-	Compressed * compressed_render = cache_.object (request);
+	const Compressed * compressed_render = cache_.object (request);
 	if (compressed_render != nullptr) {
 		// Serve request from cache
-		qDebug () << "from_cache" << *request.page << request.size;
+		qDebug () << "from_cache" << request;
 		emit parent_->new_render (requester, request,
 		                          make_pixmap_from_compressed_render (*compressed_render));
 	} else {
@@ -72,35 +100,36 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 	}
 	/* Prefetch pages around the request.
 	 * We only need to launch renders, no need to give an answer as there is no request.
+	 * FIXME fix, improve, use role and change context to decide prefetching
+	 * do not prefetch if page do not resolve to the same size !
+	 * use render::Info stuff
 	 */
-	// FIXME disable prefetch, look at weird renders requests when going backwards... (show page/role
-	// in renders)
-	int window_remaining = prefetch_window_;
+	/*int window_remaining = prefetch_window_;
 	const PageInfo * forward = request.page->next_page ();
 	while (window_remaining > 0 && forward != nullptr) {
-		qDebug () << "prefetch  " << *forward << request.size;
-		Request prefetch{forward, request.size};
-		if (!cache_.contains (prefetch))
-			launch_render (requester, prefetch);
-		forward = forward->next_page ();
-		window_remaining--;
-	}
+	  qDebug () << "prefetch  " << *forward << request.size;
+	  Request prefetch{forward, request.size};
+	  if (!cache_.contains (prefetch))
+	    launch_render (requester, prefetch);
+	  forward = forward->next_page ();
+	  window_remaining--;
+	}*/
 }
 
-void SystemPrivate::rendering_finished (const QObject * requester, Request request,
+void SystemPrivate::rendering_finished (const QObject * requester, Info render_info,
                                         Compressed * compressed, QPixmap pixmap) {
 	// When rendering has finished: store compressed, untrack, give pixmap
-	cache_.insert (request, compressed, compressed->data.size ());
-	being_rendered_.remove (request);
-	emit parent_->new_render (requester, request, pixmap);
+	cache_.insert (render_info, compressed, compressed->data.size ());
+	being_rendered_.remove (render_info);
+	emit parent_->new_render (requester, render_info, pixmap);
 }
 
-void SystemPrivate::launch_render (const QObject * requester, const Request & request) {
+void SystemPrivate::launch_render (const QObject * requester, const Info & render_info) {
 	// If not tracked: track, schedule render
-	if (!being_rendered_.contains (request)) {
-		qDebug () << "render    " << *request.page << request.size;
-		being_rendered_.insert (request);
-		auto task = new Task (requester, request);
+	if (!being_rendered_.contains (render_info)) {
+		qDebug () << "render    " << render_info;
+		being_rendered_.insert (render_info);
+		auto task = new Task (requester, render_info);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
 		QThreadPool::globalInstance ()->start (task);
 	}

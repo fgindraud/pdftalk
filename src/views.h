@@ -28,7 +28,8 @@ class PageViewer : public QLabel {
 	/* This widget will show a PDF page (using a QLabel).
 	 * It is shown maximized (keeping aspect ratio), and centered.
 	 *
-	 * The PDF page is indicated by a pointer to a PageInfo structure.
+	 * The current pixmap is indicated by a Render::Info structure.
+	 * This struct indicates which page is shown, and at which rendered size.
 	 * It will be updated by the Controller during transitions (change_page).
 	 *
 	 * Requests for Pixmaps will go through the Rendering system.
@@ -38,7 +39,7 @@ class PageViewer : public QLabel {
 	Q_OBJECT
 
 private:
-	const PageInfo * page_{nullptr};
+	Render::Info render_{};
 
 public:
 	explicit PageViewer (QWidget * parent = nullptr);
@@ -47,7 +48,7 @@ public:
 	int heightForWidth (int w) const Q_DECL_OVERRIDE;
 	QSize sizeHint () const Q_DECL_OVERRIDE { return {width (), heightForWidth (width ())}; }
 
-	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (); }
+	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE { update_label (render_.page ()); }
 	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_OVERRIDE;
 
 signals:
@@ -56,24 +57,25 @@ signals:
 
 public slots:
 	void change_page (const PageInfo * new_page) {
-		if (new_page != page_) {
-			page_ = new_page;
-			update_label ();
-		}
+		if (new_page != render_.page ())
+			update_label (new_page);
 	}
-	void receive_pixmap (const QObject * requester, const Render::Request & request, QPixmap pixmap) {
+	void receive_pixmap (const QObject * requester, const Render::Info & render_info, QPixmap pixmap) {
 		// Filter to only use the requested pixmaps
-		if (requester == this && request.page == page_ && request.size == size ())
+		if (requester == this && render_info == render_)
 			setPixmap (pixmap);
 	}
 
 private:
-	void update_label () {
+	void update_label (const PageInfo * new_page) {
+		render_ = Render::Info{new_page, size ()};
+
 		static constexpr int pixmap_size_limit_px = 10;
 		clear (); // Remove old pixmap
 		// Ask for a new pixmap only if useful
-		if (page_ != nullptr && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px)
-			emit request_render ({page_, size ()});
+		if (render_.page () != nullptr && width () >= pixmap_size_limit_px &&
+		    height () >= pixmap_size_limit_px)
+			emit request_render (Render::Request(render_)); // FIXME
 	}
 };
 
