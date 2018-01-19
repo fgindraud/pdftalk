@@ -26,37 +26,10 @@
 
 // PageInfo
 
-PageInfo::PageInfo (Poppler::Page * page, int index) : poppler_page_ (page), page_index_ (index) {
-	// precompute height_for_width_ratio
-	auto page_size_dots = poppler_page_->pageSizeF ();
-	if (!page_size_dots.isEmpty ())
-		height_for_width_ratio_ = page_size_dots.height () / page_size_dots.width ();
-
-	init_annotations ();
-	init_actions ();
-}
-
-void PageInfo::init_annotations (void) {
-	// TODO add two runtime options ?
-	// - bool: hide annotations or not ?
-	// - bool: use text annotations in presenter screen ?
-	auto list_of_annotations = poppler_page_->annotations ();
-	for (auto a : list_of_annotations) {
-		if (a->subType () == Poppler::Annotation::AText) {
-			auto text = a->contents ();
-			annotations_ += text;
-			if (!text.endsWith ('\n'))
-				annotations_ += '\n';
-		}
-		// prevent poppler from rendering annotation stuff
-		a->setFlags (a->flags () | Poppler::Annotation::Hidden);
-		delete a;
-	}
-}
-
-void PageInfo::init_actions (void) {
+void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
+                       const Poppler::Page & page) {
 	// Links does not say that we get ownership of the Link* objects... do not delete
-	for (const auto * link : poppler_page_->links ()) {
+	for (const auto * link : page.links ()) {
 		std::unique_ptr<Action::Base> new_action{nullptr};
 		// Build an action if it matches the supported types
 		using PL = Poppler::Link;
@@ -106,9 +79,18 @@ void PageInfo::init_actions (void) {
 		// If we build one, add it to list
 		if (new_action) {
 			new_action->set_rect (link->linkArea ().normalized ());
-			actions_.emplace_back (std::move (new_action));
+			actions.emplace_back (std::move (new_action));
 		}
 	}
+}
+
+PageInfo::PageInfo (Poppler::Page * page, int index) : poppler_page_ (page), page_index_ (index) {
+	// precompute height_for_width_ratio
+	auto page_size_dots = poppler_page_->pageSizeF ();
+	if (!page_size_dots.isEmpty ())
+		height_for_width_ratio_ = page_size_dots.height () / page_size_dots.width ();
+
+	add_page_actions (actions_, *poppler_page_);
 }
 
 QSize PageInfo::render_size (QSize box) const {

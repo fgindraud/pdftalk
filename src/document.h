@@ -41,9 +41,14 @@
  * It also stores Slide specific info.
  * Slide and Page numbering counts from 0.
  *
- * Annotations can come from:
- * - the pdf document, per page (stored in the PageInfo)
- * - the pdfpc text file, per slide (stored in Document::SlideInfo)
+ * Annotations follow the pdfpc model:
+ * - must be stored in a text file, pdfpc format
+ * - per slide (not page), stored in Document::SlideInfo
+ *
+ * Annotations internal to the PDF were tried:
+ * - was only per page
+ * - no way to generate them without a visual element (icon) -> broke slide layout
+ * - support was dropped for simplicity
  */
 class PageInfo {
 private:
@@ -52,7 +57,6 @@ private:
 	int page_index_;                  // PDF document page index (from 0)
 	int slide_index_{-1};             // User slide index, counting from 0
 	qreal height_for_width_ratio_{0}; // Page aspect ratio, used by GUI
-	QString annotations_;             // PDF annotations
 	std::vector<std::unique_ptr<Action::Base>> actions_;
 
 	// Related page links (used for the presenter view)
@@ -74,7 +78,6 @@ public:
 	int page_index () const { return page_index_; }
 	int slide_index (void) const { return slide_index_; }
 	qreal height_for_width_ratio (void) const { return height_for_width_ratio_; }
-	const QString & annotations (void) const { return annotations_; }
 
 	const PageInfo * next_page (void) const { return next_page_; }
 	const PageInfo * previous_page (void) const { return previous_page_; }
@@ -96,10 +99,6 @@ private:
 	void set_next_transition_page (const PageInfo * page) { next_transition_page_ = page; }
 	void set_previous_transition_page (const PageInfo * page) { previous_transition_page_ = page; }
 	void set_next_slide_first_page (const PageInfo * page) { next_slide_first_page_ = page; }
-
-	// Staged init
-	void init_annotations (void);
-	void init_actions (void);
 };
 
 QDebug operator<< (QDebug d, const PageInfo & page);

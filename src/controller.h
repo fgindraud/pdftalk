@@ -143,7 +143,7 @@ private:
 		emit previous_transition_page_changed (page.previous_transition_page ());
 		emit slide_changed (page.slide_index ());
 		const auto & slide = document_.slide (page.slide_index ());
-		emit annotations_changed (slide.annotations () + page.annotations ());
+		emit annotations_changed (slide.annotations ());
 	}
 };
 

@@ -5,7 +5,7 @@ PDFTalk - PDF presentation tool
 [![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
 [![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/qt-localshare/releases/latest)
 
-A small presentation tool like pdfpc, but using Qt.
+pdfpc replacement built using Qt5.
 
 Setup
 -----
@@ -16,7 +16,7 @@ qmake
 make
 ```
 
-Requires Qt >= 5.2, c++11 compiler support, and poppler (including Qt5 bindings).
+Requires Qt >= 5.2, C++11 compiler support, and poppler (including Qt5 bindings).
 Details about dependencies can be found in the `build/*/requirement.sh` files.
 
 Usage
@@ -28,21 +28,13 @@ pdftalk <pdf_document>
 ```
 
 It generates 2 windows, one for the spectators with the current slide, and one for the presenter with neighbouring slides, a timer, and slide numbering.
-The windows can be placed on the two screens (use 's' key to swap them), and can be made fullscreen ('f' key).
-Navigation is obvious ('→' '←' 'space' keys).
-The timer can be paused/resumed with 'p', and resetted with 'r'.
+The windows can be placed on the two screens (use `s` key to swap them), and can be made fullscreen (`f` key).
+Navigation is standard (`→` `←` `space` keys).
+The timer can be paused/resumed with `p`, and resetted with `r`.
 
-To generate text annotations for the presenter window, two options:
-* generate a pdfpc text file with notes (clean)
-	* generated manually of with the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package
-	* limited to per-slide (not page) annotations
-	* PDF document is unmodified, but the .pdfpc file must be brought along
-* add "annotations" to the PDF document itself (a bit hacky)
-	* added manually with a PDF viewer with annotations support, or with the `pdfcomment` latex package
-	* per page annotations
-	* annotations in the PDF document
-	* downside: `pdfcomment` package macros seem to add spaces in the document...
-	* `pdftalk` will hide the annotations on the slides, while displaying the text in the presenter screen
+The presenter window can show text annotations.
+It follows the pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
+The text file can easily be generated using the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package.
 
 Status
 ------
@@ -58,10 +50,7 @@ Todo:
 		* add weights to roles (public screen = highest)
 		* settings for cache size
 		* backwards prefetching
-* Improve document structure info
-	* drop PDF annotations (not working) ?
-	* only use PageInfo + Document for indexing (rm SlideInfo ?)
-* Go to page n functionnality
+* Go to page/slide n functionnality
 
 Maybe Todo:
 * Auto spread windows on monitors
