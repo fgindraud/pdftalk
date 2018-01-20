@@ -99,9 +99,7 @@ public:
 
 public slots:
 
-	void change_slide (int new_slide_number) {
-		slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
-	}
+	void change_slide (int new_slide_number);
 	void change_time (bool paused, const QString & new_time_text);
-	void change_annotations (QString new_annotations) { annotations_->setText (new_annotations); }
+	void change_annotations (QString new_annotations);
 };

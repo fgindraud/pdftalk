@@ -16,20 +16,26 @@
  */
 #pragma once
 
+#include "utils.h"
+
 #include <QApplication>
 #include <QKeySequence>
 #include <QMainWindow>
 #include <QShortcut>
-#include <array>
+#include <memory>
+#include <vector>
 
 class Window : public QMainWindow {
-	/* Detect close event to quit application.
+	/* Simple container for presentation widgets.
+	 *
+	 * Detect close event to quit application.
 	 * Toggle fullscreen on 'f' key.
 	 */
 	Q_OBJECT
 
 public:
 	Window () {
+		// Add fullscreen shortcut
 		auto sc = new QShortcut (QKeySequence (tr ("f", "fullscreen key")), this);
 		sc->setAutoRepeat (false);
 		connect (sc, &QShortcut::activated, this, &Window::toogle_fullscreen);
@@ -43,7 +49,9 @@ private:
 };
 
 class WindowShifter : public QObject {
-	/* This class takes nb_window content QWidgets, and place them in nb_window windows.
+	/* This class takes content QWidgets, and place them in Window widgets.
+	 * WindowShifter takes ownership of the QWidgets (Qt parent ownership).
+	 *
 	 * Pushing the 'f' key on a window will put it in fullscreen.
 	 * Pushing the 's' key will rotate content between windows.
 	 * The windowTitle property of content widgets is propagated to their associated window.
@@ -56,44 +64,50 @@ class WindowShifter : public QObject {
 	Q_OBJECT
 
 private:
-	static constexpr int nb_window = 2; // cannot be template due to Q_OBJECT...
-	std::array<Window, nb_window> windows_;
-	std::array<QWidget *, nb_window> contents_;
-	int current_shift_{0};
+	std::vector<QWidget *> widgets_;
+	std::vector<std::unique_ptr<Window>> windows_;
+	std::size_t current_shift_{0};
 
 public:
-	template <typename... Widgets>
-	explicit WindowShifter (const Widgets &... widgets) : contents_{widgets...} {
-		for (auto & w : windows_) {
-			// Swap shortcut
-			auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), &w);
-			sc->setAutoRepeat (false);
-			connect (sc, &QShortcut::activated, this, &WindowShifter::shift_content);
+	explicit WindowShifter (std::initializer_list<QWidget *> widgets) : widgets_ (widgets) {
+		// Create one window for each widget
+		for (std::size_t i = 0; i < nb_widgets (); ++i) {
+			auto w = make_unique<Window> ();
+			{
+				// Add swap shortcut
+				auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), w.get ());
+				sc->setAutoRepeat (false);
+				connect (sc, &QShortcut::activated, this, &WindowShifter::shift_content);
+			}
+			windows_.emplace_back (std::move (w));
 		}
 		set_content_position ();
 		for (auto & w : windows_)
-			w.show ();
+			w->show ();
 	}
 
 private slots:
 	void shift_content () {
-		current_shift_ = (current_shift_ + 1) % nb_window;
+		current_shift_ = (current_shift_ + 1) % nb_widgets ();
 		set_content_position ();
 	}
 
 private:
+	std::size_t nb_widgets () const { return widgets_.size (); }
+
+	// Set widgets to their windows, according to the current shift.
 	void set_content_position () {
 		// De-parent contents
-		for (auto & c : contents_) {
+		for (auto * c : widgets_) {
 			if (c->parentWidget () != nullptr) {
 				disconnect (c, &QWidget::windowTitleChanged, c->parentWidget (), &QWidget::setWindowTitle);
 				c->setParent (nullptr);
 			}
 		}
 		// Re-set MainWindow widgets
-		for (int i = 0; i < nb_window; ++i) {
-			auto w = &windows_[(i + current_shift_) % nb_window];
-			auto child = contents_[i];
+		for (std::size_t i = 0; i < nb_widgets (); ++i) {
+			auto * w = windows_[(i + current_shift_) % nb_widgets ()].get ();
+			auto * child = widgets_[i];
 			w->setCentralWidget (child);
 			w->setWindowTitle (child->windowTitle ());
 			connect (child, &QWidget::windowTitleChanged, w, &QWidget::setWindowTitle);

@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "document.h"
 #include "views.h"
+#include "document.h"
 
 #include <QFont>
 #include <QHBoxLayout>
@@ -193,6 +193,9 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 	}
 }
 
+void PresenterView::change_slide (int new_slide_number) {
+	slide_number_label_->setText (tr ("%1/%2").arg (new_slide_number + 1).arg (nb_slides_));
+}
 void PresenterView::change_time (bool paused, const QString & new_time_text) {
 	// Set text as colored if paused
 	auto color = Qt::white;
@@ -202,4 +205,7 @@ void PresenterView::change_time (bool paused, const QString & new_time_text) {
 	p.setColor (QPalette::WindowText, color);
 	timer_label_->setPalette (p);
 	timer_label_->setText (new_time_text);
+}
+void PresenterView::change_annotations (QString new_annotations) {
+	annotations_->setText (new_annotations);
 }
