@@ -16,14 +16,14 @@
  */
 #pragma once
 
-#include "document.h"
+class PageInfo;
 
 #include <QDebug>
-#include <QHash>
 #include <QPixmap>
 #include <QSize>
 
 namespace Render {
+class SystemPrivate;
 
 /* Info represent a render metadata.
  * It is composed of a render size, and the selected page.
@@ -66,19 +66,17 @@ public:
 	const QSize & box_size () const noexcept { return box_size_; }
 };
 
-class SystemPrivate;
-
+/* Global rendering system.
+ * Classes (viewers) can request a render by signaling request_render().
+ * After some time, new_render will return the requested pixmap.
+ * QObject * requester and the request struct let viewers identify their answers.
+ *
+ * Internally, the cost of rendering is reduced by caching (see render_internal.h).
+ * Additionally, the pages next to the current one are pre-rendered.
+ * cache_size_bytes sets the size of the cache in bytes.
+ * prefetch_window controls the pre-rendering window (1 = next, ...)
+ */
 class System : public QObject {
-	/* Global rendering system.
-	 * Classes (viewers) can request a render by signaling request_render().
-	 * After some time, new_render will return the requested pixmap.
-	 * QObject * requester and the request struct let viewers identify their answers.
-	 *
-	 * Internally, the cost of rendering is reduced by caching (see render_internal.h).
-	 * Additionally, the pages next to the current one are pre-rendered.
-	 * cache_size_bytes sets the size of the cache in bytes.
-	 * prefetch_window controls the pre-rendering window (1 = next, ...)
-	 */
 	Q_OBJECT
 
 private:

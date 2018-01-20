@@ -42,4 +42,4 @@ void PageLast::execute (Controller & controller) const {
 void PageIndex::execute (Controller & controller) const {
 	controller.go_to_page_index (index_);
 }
-}
+} // namespace Action

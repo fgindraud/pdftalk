@@ -20,12 +20,11 @@
 #include "document.h"
 
 #include <QBasicTimer>
+#include <QDebug>
 #include <QPixmap>
 #include <QShortcut>
 #include <QTime>
 class QWidget;
-
-#include <QDebug>
 
 class Timing : public QObject {
 	/* Timer for a presentation.

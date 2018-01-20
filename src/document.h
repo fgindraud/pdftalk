@@ -16,12 +16,17 @@
  */
 #pragma once
 
-#include "action.h"
+namespace Action {
+class Base;
+}
+namespace Poppler {
+class Document;
+class Page;
+} // namespace Poppler
 
 #include <QDebug>
 #include <QString>
-#include <memory> // unique_ptr
-#include <poppler-qt5.h>
+#include <memory>
 #include <vector>
 
 /* A presentation (in beamer at least) is a pdf document.
@@ -85,7 +90,7 @@ public:
 	const PageInfo * previous_transition_page () const { return previous_transition_page_; }
 	const PageInfo * next_slide_first_page () const { return next_slide_first_page_; }
 
-	QString label () const { return poppler_page_->label (); }
+	QString label () const;
 
 	QSize render_size (const QSize & box) const; // Which render size can fit in box
 	QImage render (const QSize & box) const;     // Make render in box
@@ -143,6 +148,7 @@ private:
 
 public:
 	explicit Document (const QString & filename);
+	~Document ();
 
 	int nb_pages () const { return pages_.size (); }
 	const PageInfo & page (int page_index) const { return *pages_.at (page_index); }

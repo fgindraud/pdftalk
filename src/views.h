@@ -16,13 +16,15 @@
  */
 #pragma once
 
-#include "document.h"
 #include "render.h"
+class PageInfo;
+namespace Action {
+class Base;
+}
 
 #include <QLabel>
-#include <QWidget>
-
 #include <QPixmap>
+#include <QWidget>
 
 class PageViewer : public QLabel {
 	/* This widget will show a PDF page (using a QLabel).

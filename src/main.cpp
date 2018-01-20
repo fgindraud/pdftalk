@@ -78,10 +78,11 @@ int main (int argc, char * argv[]) {
 	                  presenter_view->previous_transition_page_viewer (), &PageViewer::change_page);
 
 	// Link viewers to actions & caching system
-	PageViewer * viewers[] = {presentation_view, presenter_view->current_page_viewer (),
-	                          presenter_view->next_slide_first_page_viewer (),
-	                          presenter_view->next_transition_page_viewer (),
-	                          presenter_view->previous_transition_page_viewer ()};
+	auto viewers =
+	    std::initializer_list<PageViewer *>{presentation_view, presenter_view->current_page_viewer (),
+	                                        presenter_view->next_slide_first_page_viewer (),
+	                                        presenter_view->next_transition_page_viewer (),
+	                                        presenter_view->previous_transition_page_viewer ()};
 	for (auto v : viewers) {
 		QObject::connect (v, &PageViewer::action_activated, &control, &Controller::execute_action);
 
@@ -93,6 +94,6 @@ int main (int argc, char * argv[]) {
 	WindowShifter windows{presentation_view, presenter_view};
 
 	// Init system
-	QTimer::singleShot (0, &control, SLOT (reset()));
+	QTimer::singleShot (0, &control, SLOT (reset ()));
 	return app.exec ();
 }

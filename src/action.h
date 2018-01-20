@@ -16,12 +16,12 @@
  */
 #pragma once
 
-#include <QRect>
-#include <QString>
 class Controller;
 
-namespace Action {
+#include <QRect>
+#include <QString>
 
+namespace Action {
 class Base {
 	/* All clickable actions derive from Base.
 	 * Base provides a common rect field to identify the clickable rectangle.

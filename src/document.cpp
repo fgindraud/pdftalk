@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "document.h"
 #include "action.h"
+#include "document.h"
 #include "utils.h"
 
 #include <QDebugStateSaver>
@@ -23,6 +23,7 @@
 #include <QImage>
 #include <QTextStream>
 #include <algorithm>
+#include <poppler-qt5.h>
 
 // PageInfo
 
@@ -94,6 +95,10 @@ PageInfo::PageInfo (std::unique_ptr<Poppler::Page> page, int index)
 	add_page_actions (actions_, *poppler_page_);
 }
 
+QString PageInfo::label () const {
+	return poppler_page_->label ();
+}
+
 QSize PageInfo::render_size (const QSize & box) const {
 	// Computes the size we can render page in the given box
 	const auto page_size_dots = poppler_page_->pageSizeF ();
@@ -161,6 +166,7 @@ Document::Document (const QString & filename) : document_ (Poppler::Document::lo
 	discover_document_structure ();
 	read_annotations_from_file (filename + "pc"); // TODO config point
 }
+Document::~Document () = default;
 
 void Document::discover_document_structure () {
 	// Parse all pages, and create SlideInfo structures each time we "change of slide"

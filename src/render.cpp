@@ -15,9 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "render.h"
+#include "document.h"
 #include "render_internal.h"
 
 #include <QDebug>
+#include <QHash>
 #include <QMetaType>
 #include <QThreadPool>
 
