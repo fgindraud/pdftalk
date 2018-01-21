@@ -1,4 +1,7 @@
-language: cpp
+language: c++
+
+notifications:
+   email: false
 
 matrix:
    include:
