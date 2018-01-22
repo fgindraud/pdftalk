@@ -136,13 +136,13 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 			auto transition_box = new QHBoxLayout;
 			current_slide_panel->addLayout (transition_box, 3); // 30% screen height
 			{
-				previous_transition_page_ = new PageViewer (Render::Role::PreviousTransition);
+				previous_transition_page_ = new PageViewer (Render::Role::Transition);
 				previous_transition_page_->setObjectName ("presenter/prev_transition");
 				transition_box->addWidget (previous_transition_page_);
 
 				transition_box->addStretch ();
 
-				next_transition_page_ = new PageViewer (Render::Role::NextTransition);
+				next_transition_page_ = new PageViewer (Render::Role::Transition);
 				next_transition_page_->setObjectName ("presenter/next_transition");
 				transition_box->addWidget (next_transition_page_);
 			}

@@ -55,8 +55,7 @@ enum class Role {
 	CurrentPublic,
 	CurrentPresenter,
 	NextSlide,
-	NextTransition,
-	PreviousTransition,
+	Transition,
 	NoRole
 };
 QDebug operator<< (QDebug d, const Role & role);
