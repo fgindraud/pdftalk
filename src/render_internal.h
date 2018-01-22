@@ -52,8 +52,19 @@ struct Compressed {
 	QImage::Format image_format;
 };
 
-// Rendering, Compressing / Uncompressing primitives
+/* Renders the page at the selected size.
+ * Returns both the pixmap and a Compressed version.
+ * The pixmap can be given to the requesting view.
+ * The Compressed version can be stored in the render cache.
+ *
+ * Compressed renders are transmitted as owning raw pointers.
+ * Signals cannot handle unique_ptr<Compressed> (move only unsupported).
+ * And QCache requires an 'operator new' allocated object.
+ */
 std::pair<Compressed *, QPixmap> make_render (const Info & render_info);
+
+/* Recreate a pixmap from a Compressed render.
+ */
 QPixmap make_pixmap_from_compressed_render (const Compressed & render);
 
 class Task : public QObject, public QRunnable {

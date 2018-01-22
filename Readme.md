@@ -16,7 +16,7 @@ qmake
 make
 ```
 
-Requires Qt >= 5.2, C++11 compiler support, and poppler (including Qt5 bindings).
+Requires Qt >= 5.3, C++11 compiler support, and poppler (including Qt5 bindings).
 Details about dependencies can be found in the `build/*/requirement.sh` files.
 
 Usage
