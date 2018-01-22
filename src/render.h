@@ -49,8 +49,11 @@ bool operator== (const Info & a, const Info & b);
 uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
+
+
 /* Represent a render request comming from one of the views.
  * A view will request a render of a specific page, to fit within the view space.
+ * A request must have a valid render info.
  *
  * The request will contain the actual render info (Info).
  * It also contains the box size: useful for prefetching.

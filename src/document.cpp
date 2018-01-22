@@ -14,8 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "action.h"
 #include "document.h"
+#include "action.h"
 #include "utils.h"
 
 #include <QDebugStateSaver>
@@ -29,7 +29,6 @@
 
 void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
                        const Poppler::Page & page) {
-	// Links does not say that we get ownership of the Link* objects... do not delete
 	for (const auto * link : page.links ()) {
 		std::unique_ptr<Action::Base> new_action{nullptr};
 		// Build an action if it matches the supported types
@@ -82,6 +81,11 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 			new_action->set_rect (link->linkArea ().normalized ());
 			actions.emplace_back (std::move (new_action));
 		}
+		/* Documentation of links() does not say that we get ownership of the Link* objects.
+		 * Testing with valgrind show memory leaks if not deleted.
+		 * So I assume links() does give ownership of Link* objects.
+		 */
+		delete link;
 	}
 }
 

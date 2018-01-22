@@ -51,7 +51,10 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 
 // Render Request
 
-Request::Request (const Info & info, const QSize & box) : Info (info), box_size_ (box) {}
+Request::Request (const Info & info, const QSize & box) : Info (info), box_size_ (box) {
+	Q_ASSERT (!info.isNull ());
+	Q_ASSERT (info.size () == info.page ()->render_size (box));
+}
 
 // Rendering, Compressing / Uncompressing primitives
 
