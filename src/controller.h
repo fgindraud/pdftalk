@@ -69,7 +69,7 @@ private:
 			total = total.addMSecs (last_resume_.elapsed ());
 		emit update (!timer_.isActive (), total.toString (tr ("HH:mm:ss")));
 	}
-	void timerEvent (QTimerEvent *) Q_DECL_OVERRIDE { emit_update (); }
+	void timerEvent (QTimerEvent *) Q_DECL_FINAL { emit_update (); }
 	void start_or_resume_timing () {
 		timer_.start (1000, this); // FIXME can cause misticks if too small...
 		last_resume_.start ();

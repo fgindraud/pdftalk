@@ -45,7 +45,7 @@ private slots:
 	void toogle_fullscreen () { setWindowState (windowState () ^ Qt::WindowFullScreen); }
 
 private:
-	void closeEvent (QCloseEvent *) Q_DECL_OVERRIDE { QApplication::quit (); }
+	void closeEvent (QCloseEvent *) Q_DECL_FINAL { QApplication::quit (); }
 };
 
 /* This class takes content QWidgets, and place them in Window widgets.

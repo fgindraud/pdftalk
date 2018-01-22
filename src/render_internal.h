@@ -82,7 +82,7 @@ signals:
 	void finished_rendering (Render::Info render_info, Compressed * compressed, QPixmap pixmap);
 
 public:
-	void run () Q_DECL_OVERRIDE {
+	void run () Q_DECL_FINAL {
 		auto result = make_render (render_info_);
 		emit finished_rendering (render_info_, result.first, result.second);
 	}

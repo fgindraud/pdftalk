@@ -44,7 +44,7 @@ public:
 // Quit the application
 class Quit : public Base {
 public:
-	void execute (Controller &) const Q_DECL_OVERRIDE;
+	void execute (Controller &) const Q_DECL_FINAL;
 };
 
 // Open an url in a Browser
@@ -54,25 +54,25 @@ private:
 
 public:
 	Browser (const QString & url) : url_ (url) {}
-	void execute (Controller &) const Q_DECL_OVERRIDE;
+	void execute (Controller &) const Q_DECL_FINAL;
 };
 
 // Navigation
 class PageNext : public Base {
 public:
-	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+	void execute (Controller & controller) const Q_DECL_FINAL;
 };
 class PagePrevious : public Base {
 public:
-	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+	void execute (Controller & controller) const Q_DECL_FINAL;
 };
 class PageFirst : public Base {
 public:
-	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+	void execute (Controller & controller) const Q_DECL_FINAL;
 };
 class PageLast : public Base {
 public:
-	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+	void execute (Controller & controller) const Q_DECL_FINAL;
 };
 class PageIndex : public Base {
 private:
@@ -80,6 +80,6 @@ private:
 
 public:
 	PageIndex (int index) : index_ (index) {}
-	void execute (Controller & controller) const Q_DECL_OVERRIDE;
+	void execute (Controller & controller) const Q_DECL_FINAL;
 };
 } // namespace Action

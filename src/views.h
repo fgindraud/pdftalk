@@ -50,11 +50,11 @@ public:
 	explicit PageViewer (const Render::Role & role, QWidget * parent = nullptr);
 
 	// Layouting info
-	int heightForWidth (int w) const Q_DECL_OVERRIDE;
-	QSize sizeHint () const Q_DECL_OVERRIDE;
+	int heightForWidth (int w) const Q_DECL_FINAL;
+	QSize sizeHint () const Q_DECL_FINAL;
 
-	void resizeEvent (QResizeEvent *) Q_DECL_OVERRIDE;
-	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_OVERRIDE;
+	void resizeEvent (QResizeEvent *) Q_DECL_FINAL;
+	void mouseReleaseEvent (QMouseEvent * event) Q_DECL_FINAL;
 
 signals:
 	void action_activated (const Action::Base * action);
