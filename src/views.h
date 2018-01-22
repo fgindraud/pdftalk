@@ -42,9 +42,10 @@ class PageViewer : public QLabel {
 
 private:
 	Render::Info render_{};
+	Render::Role role_{Render::Role::NoRole};
 
 public:
-	explicit PageViewer (QWidget * parent = nullptr);
+	explicit PageViewer (const Render::Role & role, QWidget * parent = nullptr);
 
 	// Layouting info
 	int heightForWidth (int w) const Q_DECL_OVERRIDE;

@@ -49,16 +49,39 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 	return d;
 }
 
+// Render Role
+
+QDebug operator<< (QDebug d, const Role & role) {
+	auto select_str = [](const Role & role) -> const char * {
+		switch (role) {
+		case Role::CurrentPublic:
+			return "CurrentPublic";
+		case Role::CurrentPresenter:
+			return "CurrentPresenter";
+		case Role::NextSlide:
+			return "NextSlide";
+		case Role::NextTransition:
+			return "NextTransition";
+		case Role::PreviousTransition:
+			return "PreviousTransition";
+		default:
+			return "NoRole";
+		}
+	};
+	d << select_str (role);
+	return d;
+}
+
 // Render Request
 
-Request::Request (const Info & info, const QSize & box) : Info (info), box_size_ (box) {
+Request::Request (const Info & info, const QSize & box, const Role & role)
+    : Info (info), box_size_ (box), role_ (role) {
 	Q_ASSERT (!info.isNull ());
 	Q_ASSERT (info.size () == info.page ()->render_size (box));
 }
 
 // Rendering, Compressing / Uncompressing primitives
 
-// FIXME std::up
 std::pair<Compressed *, QPixmap> make_render (const Info & render_info) {
 	// Renders, and returns both the pixmap and the compressed image
 	QImage image = render_info.page ()->render (render_info.size ());

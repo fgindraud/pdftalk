@@ -27,7 +27,8 @@
 
 // PageViewer
 
-PageViewer::PageViewer (QWidget * parent) : QLabel (parent) {
+PageViewer::PageViewer (const Render::Role & role, QWidget * parent)
+    : QLabel (parent), role_ (role) {
 	setScaledContents (false);
 	setAlignment (Qt::AlignCenter);
 	setMinimumSize (1, 1); // To prevent nil QLabel when no pixmap is available
@@ -86,12 +87,13 @@ void PageViewer::update_label (const PageInfo * new_page) {
 	clear (); // Remove old pixmap
 	// Ask for a new pixmap only if useful
 	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px)
-		emit request_render (Render::Request{render_, size ()});
+		emit request_render (Render::Request{render_, size (), role_});
 }
 
 // PresentationView
 
-PresentationView::PresentationView (QWidget * parent) : PageViewer (parent) {
+PresentationView::PresentationView (QWidget * parent)
+    : PageViewer (Render::Role::CurrentPublic, parent) {
 	// Title
 	setWindowTitle (tr ("Presentation screen"));
 	// Black background
@@ -127,20 +129,20 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 			auto current_slide_panel = new QVBoxLayout;
 			slide_panels->addLayout (current_slide_panel, 6); // 60% screen width
 
-			current_page_ = new PageViewer;
+			current_page_ = new PageViewer (Render::Role::CurrentPresenter);
 			current_page_->setObjectName ("presenter/current");
 			current_slide_panel->addWidget (current_page_, 7); // 70% screen height
 
 			auto transition_box = new QHBoxLayout;
 			current_slide_panel->addLayout (transition_box, 3); // 30% screen height
 			{
-				previous_transition_page_ = new PageViewer;
+				previous_transition_page_ = new PageViewer (Render::Role::PreviousTransition);
 				previous_transition_page_->setObjectName ("presenter/prev_transition");
 				transition_box->addWidget (previous_transition_page_);
 
 				transition_box->addStretch ();
 
-				next_transition_page_ = new PageViewer;
+				next_transition_page_ = new PageViewer (Render::Role::NextTransition);
 				next_transition_page_->setObjectName ("presenter/next_transition");
 				transition_box->addWidget (next_transition_page_);
 			}
@@ -152,7 +154,7 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 			auto next_slide_and_comment_panel = new QVBoxLayout;
 			slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40% screen width
 
-			next_slide_first_page_ = new PageViewer;
+			next_slide_first_page_ = new PageViewer (Render::Role::NextSlide);
 			next_slide_first_page_->setObjectName ("presenter/next_slide");
 			next_slide_and_comment_panel->addWidget (next_slide_first_page_);
 

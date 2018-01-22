@@ -49,22 +49,34 @@ bool operator== (const Info & a, const Info & b);
 uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
-
+/* Render role.
+ */
+enum class Role {
+	CurrentPublic,
+	CurrentPresenter,
+	NextSlide,
+	NextTransition,
+	PreviousTransition,
+	NoRole
+};
+QDebug operator<< (QDebug d, const Role & role);
 
 /* Represent a render request comming from one of the views.
  * A view will request a render of a specific page, to fit within the view space.
  * A request must have a valid render info.
  *
  * The request will contain the actual render info (Info).
- * It also contains the box size: useful for prefetching.
+ * It contains the box size: useful for prefetching.
+ * It contains the render role: for selecting a prefetching strategy.
  */
 class Request : public Info {
 private:
 	QSize box_size_{};
+	Role role_{Role::NoRole};
 
 public:
 	Request () = default; // Required by Qt Moc, should not be used otherwise
-	Request (const Info & info, const QSize & box);
+	Request (const Info & info, const QSize & box, const Role & role);
 
 	const QSize & box_size () const noexcept { return box_size_; }
 };
