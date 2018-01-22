@@ -58,6 +58,10 @@ int main (int argc, char * argv[]) {
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
 
+	// Type registration (once before use in connect)
+	qRegisterMetaType<Render::Info> ();
+	qRegisterMetaType<Render::Request> ();
+
 	// Command line parsing
 	QCommandLineParser parser;
 	parser.setApplicationDescription ("PDF presentation tool");

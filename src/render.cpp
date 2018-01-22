@@ -106,11 +106,7 @@ QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 // System impl
 
 System::System (int cache_size_bytes, int prefetch_window)
-    : d_ (new SystemPrivate (cache_size_bytes, prefetch_window, this)) {
-	// Request registration (once before use in connect)
-	qRegisterMetaType<Info> ();
-	qRegisterMetaType<Request> ();
-}
+    : d_ (new SystemPrivate (cache_size_bytes, prefetch_window, this)) {}
 
 void System::request_render (const Request & request) {
 	d_->request_render (request);
