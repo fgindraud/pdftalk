@@ -34,6 +34,7 @@ class Base;
  * It will be updated by the Controller during transitions (change_page).
  *
  * Requests for Pixmaps will go through the Rendering system.
+ * The rendering system will broadcast request answers: receive_pixmap must filter incoming pixmaps.
  *
  * This widget also catches click events and will activate the page actions accordingly.
  */
@@ -43,6 +44,7 @@ class PageViewer : public QLabel {
 private:
 	Render::Info render_{};
 	Render::Role role_{Render::Role::NoRole};
+	bool requested_a_pixmap_{false};
 
 public:
 	explicit PageViewer (const Render::Role & role, QWidget * parent = nullptr);
@@ -60,7 +62,7 @@ signals:
 
 public slots:
 	void change_page (const PageInfo * new_page);
-	void receive_pixmap (const QObject * requester, const Render::Info & render_info, QPixmap pixmap);
+	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
 	void update_label (const PageInfo * new_page);

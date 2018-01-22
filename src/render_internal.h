@@ -72,22 +72,19 @@ class Task : public QObject, public QRunnable {
 	Q_OBJECT
 
 private:
-	const QObject * requester_;
 	const Info render_info_;
 
 public:
-	Task (const QObject * requester, const Info & render_info)
-	    : requester_ (requester), render_info_ (render_info) {}
+	Task (const Info & render_info) : render_info_ (render_info) {}
 
 signals:
 	// "Render::Info" as Qt is not very namespace friendly
-	void finished_rendering (const QObject * requester, Render::Info render_info,
-	                         Compressed * compressed, QPixmap pixmap);
+	void finished_rendering (Render::Info render_info, Compressed * compressed, QPixmap pixmap);
 
 public:
 	void run () Q_DECL_OVERRIDE {
 		auto result = make_render (render_info_);
-		emit finished_rendering (requester_, render_info_, result.first, result.second);
+		emit finished_rendering (render_info_, result.first, result.second);
 	}
 };
 
@@ -113,14 +110,13 @@ public:
 	      cache_ (cache_size_bytes),
 	      prefetch_window_ (prefetch_window) {}
 
-	void request_render (const QObject * requester, const Request & request);
+	void request_render (const Request & request);
 
 private slots:
 	// "Render::Info" as Qt is not very namespace friendly
-	void rendering_finished (const QObject * requester, Render::Info render_info,
-	                         Compressed * compressed, QPixmap pixmap);
+	void rendering_finished (Render::Info render_info, Compressed * compressed, QPixmap pixmap);
 
 private:
-	void launch_render (const QObject * requester, const Info & render_info);
+	void launch_render (const Info & render_info);
 };
 } // namespace Render

@@ -113,10 +113,10 @@ System::System (int cache_size_bytes, int prefetch_window)
 }
 
 void System::request_render (const Request & request) {
-	d_->request_render (sender (), request);
+	d_->request_render (request);
 }
 
-void SystemPrivate::request_render (const QObject * requester, const Request & request) {
+void SystemPrivate::request_render (const Request & request) {
 	qDebug () << "request    " << request << request.role ();
 
 	// Handle request
@@ -124,11 +124,10 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 	if (compressed_render != nullptr) {
 		// Serve request from cache
 		qDebug () << "-> cached  " << request;
-		emit parent_->new_render (requester, request,
-		                          make_pixmap_from_compressed_render (*compressed_render));
+		emit parent_->new_render (request, make_pixmap_from_compressed_render (*compressed_render));
 	} else {
 		// Make new render (spawn a Task in a QThreadPool)
-		launch_render (requester, request);
+		launch_render (request);
 	}
 	/* Prefetch pages around the request.
 	 * We only need to launch renders, no need to give an answer as there is no request.
@@ -147,20 +146,19 @@ void SystemPrivate::request_render (const QObject * requester, const Request & r
 	}*/
 }
 
-void SystemPrivate::rendering_finished (const QObject * requester, Info render_info,
-                                        Compressed * compressed, QPixmap pixmap) {
+void SystemPrivate::rendering_finished (Info render_info, Compressed * compressed, QPixmap pixmap) {
 	// When rendering has finished: store compressed, untrack, give pixmap
 	cache_.insert (render_info, compressed, compressed->data.size ());
 	being_rendered_.remove (render_info);
-	emit parent_->new_render (requester, render_info, pixmap);
+	emit parent_->new_render (render_info, pixmap);
 }
 
-void SystemPrivate::launch_render (const QObject * requester, const Info & render_info) {
+void SystemPrivate::launch_render (const Info & render_info) {
 	// If not tracked: track, schedule render
 	if (!being_rendered_.contains (render_info)) {
 		qDebug () << "-> render  " << render_info;
 		being_rendered_.insert (render_info);
-		auto * task = new Task (requester, render_info);
+		auto * task = new Task (render_info);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
 		QThreadPool::globalInstance ()->start (task);
 	}

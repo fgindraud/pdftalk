@@ -73,11 +73,12 @@ void PageViewer::change_page (const PageInfo * new_page) {
 	if (new_page != render_.page ())
 		update_label (new_page);
 }
-void PageViewer::receive_pixmap (const QObject * requester, const Render::Info & render_info,
-                                 QPixmap pixmap) {
+void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixmap) {
 	// Filter to only use the requested pixmaps
-	if (requester == this && render_info == render_)
+	if (requested_a_pixmap_ && render_info == render_) {
+		requested_a_pixmap_ = false;
 		setPixmap (pixmap);
+	}
 }
 
 void PageViewer::update_label (const PageInfo * new_page) {
@@ -86,8 +87,10 @@ void PageViewer::update_label (const PageInfo * new_page) {
 	static constexpr int pixmap_size_limit_px = 10;
 	clear (); // Remove old pixmap
 	// Ask for a new pixmap only if useful
-	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px)
+	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px) {
+		requested_a_pixmap_ = true;
 		emit request_render (Render::Request{render_, size (), role_});
+	}
 }
 
 // PresentationView

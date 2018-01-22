@@ -79,9 +79,7 @@ public:
 /* Global rendering system.
  * Classes (viewers) can request a render by signaling request_render().
  * After some time, new_render will return the requested pixmap.
- * QObject * requester and the request struct let viewers identify their answers.
- * FIXME remove requester on new_render: we do not care who requested it !
- * FIXME remove requester check in views
+ * The new pixmap is broadcasted to all views; only requesting views will actually update.
  *
  * Internally, the cost of rendering is reduced by caching (see render_internal.h).
  * Additionally, the pages next to the current one are pre-rendered.
@@ -98,7 +96,7 @@ public:
 	System (int cache_size_bytes, int prefetch_window);
 
 signals:
-	void new_render (const QObject * requester, const Info & render_info, QPixmap render_data);
+	void new_render (const Info & render_info, QPixmap render_data);
 
 public slots:
 	void request_render (const Request & request);
