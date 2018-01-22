@@ -78,6 +78,7 @@ public:
 	Request (const Info & info, const QSize & box, const Role & role);
 
 	const QSize & box_size () const noexcept { return box_size_; }
+	const Role & role () const noexcept { return role_; }
 };
 
 /* Global rendering system.

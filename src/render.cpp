@@ -117,11 +117,13 @@ void System::request_render (const Request & request) {
 }
 
 void SystemPrivate::request_render (const QObject * requester, const Request & request) {
+	qDebug () << "request    " << request << request.role ();
+
 	// Handle request
 	const Compressed * compressed_render = cache_.object (request);
 	if (compressed_render != nullptr) {
 		// Serve request from cache
-		qDebug () << "from_cache" << request;
+		qDebug () << "-> cached  " << request;
 		emit parent_->new_render (requester, request,
 		                          make_pixmap_from_compressed_render (*compressed_render));
 	} else {
@@ -156,7 +158,7 @@ void SystemPrivate::rendering_finished (const QObject * requester, Info render_i
 void SystemPrivate::launch_render (const QObject * requester, const Info & render_info) {
 	// If not tracked: track, schedule render
 	if (!being_rendered_.contains (render_info)) {
-		qDebug () << "render    " << render_info;
+		qDebug () << "-> render  " << render_info;
 		being_rendered_.insert (render_info);
 		auto task = new Task (requester, render_info);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
