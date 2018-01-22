@@ -50,14 +50,10 @@ uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
 /* Render role.
+ * Used to select a prefetching strategy in the renderer system.
+ * Public should be prefetched more aggressively than presenter view roles.
  */
-enum class Role {
-	CurrentPublic,
-	CurrentPresenter,
-	NextSlide,
-	Transition,
-	NoRole
-};
+enum class Role { CurrentPublic, CurrentPresenter, NextSlide, Transition, NoRole };
 QDebug operator<< (QDebug d, const Role & role);
 
 /* Represent a render request comming from one of the views.
@@ -65,8 +61,7 @@ QDebug operator<< (QDebug d, const Role & role);
  * A request must have a valid render info.
  *
  * The request will contain the actual render info (Info).
- * It contains the box size: useful for prefetching.
- * It contains the render role: for selecting a prefetching strategy.
+ * Additional informations for prefetching: box size, render role.
  */
 class Request : public Info {
 private:
@@ -85,6 +80,8 @@ public:
  * Classes (viewers) can request a render by signaling request_render().
  * After some time, new_render will return the requested pixmap.
  * QObject * requester and the request struct let viewers identify their answers.
+ * FIXME remove requester on new_render: we do not care who requested it !
+ * FIXME remove requester check in views
  *
  * Internally, the cost of rendering is reduced by caching (see render_internal.h).
  * Additionally, the pages next to the current one are pre-rendered.

@@ -84,7 +84,7 @@ std::pair<Compressed *, QPixmap> make_render (const Info & render_info) {
 	// Renders, and returns both the pixmap and the compressed image
 	QImage image = render_info.page ()->render (render_info.size ());
 	auto compressed_data = qCompress (image.bits (), image.byteCount ());
-	auto compressed_render =
+	auto * compressed_render =
 	    new Compressed{compressed_data, image.size (), image.bytesPerLine (), image.format ()};
 	return {compressed_render, QPixmap::fromImage (std::move (image))};
 }
@@ -95,7 +95,7 @@ static void qbytearray_deleter (void * p) {
 QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 	// Recreate an image and then a pixmap from compressed data
 	// Try to avoid any useless copy by using the non-owning QImage constructor
-	auto uncompressed_data = new QByteArray;
+	auto * uncompressed_data = new QByteArray;
 	*uncompressed_data = qUncompress (render.data);
 	QImage image (reinterpret_cast<uchar *> (uncompressed_data->data ()), render.size.width (),
 	              render.size.height (), render.bytes_per_line, render.image_format,
@@ -160,7 +160,7 @@ void SystemPrivate::launch_render (const QObject * requester, const Info & rende
 	if (!being_rendered_.contains (render_info)) {
 		qDebug () << "-> render  " << render_info;
 		being_rendered_.insert (render_info);
-		auto task = new Task (requester, render_info);
+		auto * task = new Task (requester, render_info);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
 		QThreadPool::globalInstance ()->start (task);
 	}

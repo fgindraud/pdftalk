@@ -35,7 +35,7 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 		using PL = Poppler::Link;
 		switch (link->linkType ()) {
 		case PL::Goto: {
-			auto p = dynamic_cast<const Poppler::LinkGoto *> (link);
+			auto * p = dynamic_cast<const Poppler::LinkGoto *> (link);
 			if (!p->isExternal ()) {
 				auto page_index = p->destination ().pageNumber () - 1;
 				new_action = make_unique<Action::PageIndex> (page_index);
@@ -43,7 +43,7 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 		} break;
 		case PL::Action: {
 			using PA = Poppler::LinkAction;
-			auto p = dynamic_cast<const PA *> (link);
+			auto * p = dynamic_cast<const PA *> (link);
 			switch (p->actionType ()) {
 			case PA::Quit:
 			case PA::EndPresentation:
@@ -69,7 +69,7 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 			}
 		} break;
 		case PL::Browse: {
-			auto p = dynamic_cast<const Poppler::LinkBrowse *> (link);
+			auto * p = dynamic_cast<const Poppler::LinkBrowse *> (link);
 			new_action = make_unique<Action::Browser> (p->url ());
 		} break;
 		default:

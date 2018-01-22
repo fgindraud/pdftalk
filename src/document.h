@@ -111,6 +111,9 @@ private:
 
 QDebug operator<< (QDebug d, const PageInfo & page);
 
+/* Represent information for a slide.
+ * Only annotations and first page.
+ */
 class SlideInfo {
 private:
 	int first_page_index_;
@@ -130,17 +133,16 @@ public:
 	const QString & annotations () const { return annotations_; }
 };
 
+/* Represents an opened pdf document.
+ * The document is represented as a list of PageInfo objects which represents the document pages.
+ * All PageInfo objects are owned by the Document object.
+ * A Document must contains at least one page.
+ *
+ * Additionnaly it stores info for each slide (group of pages):
+ * - first page, to allow seeking in the presentation.
+ * - pdfpc annotations, which are per slide.
+ */
 class Document {
-	/* Represents an opened pdf document.
-	 * The document is represented as a list of PageInfo objects which represents the document pages.
-	 * All PageInfo objects are owned by the Document object.
-	 * A Document must contains at least one page.
-	 *
-	 * Additionnaly it stores info for each slide (group of pages):
-	 * - first page, to allow seeking in the presentation.
-	 * - pdfpc annotations, which are per slide.
-	 */
-
 private:
 	std::unique_ptr<Poppler::Document> document_;
 	std::vector<std::unique_ptr<PageInfo>> pages_;

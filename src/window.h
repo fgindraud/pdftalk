@@ -25,18 +25,18 @@
 #include <memory>
 #include <vector>
 
+/* Simple container for presentation widgets.
+ *
+ * Detect close event to quit application.
+ * Toggle fullscreen on 'f' key.
+ */
 class Window : public QMainWindow {
-	/* Simple container for presentation widgets.
-	 *
-	 * Detect close event to quit application.
-	 * Toggle fullscreen on 'f' key.
-	 */
 	Q_OBJECT
 
 public:
 	Window () {
 		// Add fullscreen shortcut
-		auto sc = new QShortcut (QKeySequence (tr ("f", "fullscreen key")), this);
+		auto * sc = new QShortcut (QKeySequence (tr ("f", "fullscreen key")), this);
 		sc->setAutoRepeat (false);
 		connect (sc, &QShortcut::activated, this, &Window::toogle_fullscreen);
 	}
@@ -48,19 +48,19 @@ private:
 	void closeEvent (QCloseEvent *) Q_DECL_OVERRIDE { QApplication::quit (); }
 };
 
+/* This class takes content QWidgets, and place them in Window widgets.
+ * WindowShifter takes ownership of the QWidgets (Qt parent ownership).
+ *
+ * Pushing the 'f' key on a window will put it in fullscreen.
+ * Pushing the 's' key will rotate content between windows.
+ * The windowTitle property of content widgets is propagated to their associated window.
+ *
+ * TODO place on different monitors by default
+ * QWidget::window() returns the QWindow
+ * QWindow::setScreen()/QWindow::screen()
+ * QScreen: get screens and such
+ */
 class WindowShifter : public QObject {
-	/* This class takes content QWidgets, and place them in Window widgets.
-	 * WindowShifter takes ownership of the QWidgets (Qt parent ownership).
-	 *
-	 * Pushing the 'f' key on a window will put it in fullscreen.
-	 * Pushing the 's' key will rotate content between windows.
-	 * The windowTitle property of content widgets is propagated to their associated window.
-	 *
-	 * TODO place on different monitors by default
-	 * QWidget::window() returns the QWindow
-	 * QWindow::setScreen()/QWindow::screen()
-	 * QScreen: get screens and such
-	 */
 	Q_OBJECT
 
 private:
@@ -75,7 +75,7 @@ public:
 			auto w = make_unique<Window> ();
 			{
 				// Add swap shortcut
-				auto sc = new QShortcut (QKeySequence (tr ("s", "swap key")), w.get ());
+				auto * sc = new QShortcut (QKeySequence (tr ("s", "swap key")), w.get ());
 				sc->setAutoRepeat (false);
 				connect (sc, &QShortcut::activated, this, &WindowShifter::shift_content);
 			}

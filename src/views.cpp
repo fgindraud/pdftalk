@@ -63,7 +63,7 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 		                 static_cast<qreal> (pixmap_size.width ()),
 		             static_cast<qreal> (event->y () - pixmap_offset_in_label.height ()) /
 		                 static_cast<qreal> (pixmap_size.height ()));
-		auto action = render_.page ()->on_click (click_pos_01);
+		auto * action = render_.page ()->on_click (click_pos_01);
 		if (action != nullptr)
 			emit action_activated (action);
 	}
@@ -119,21 +119,21 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 	setAutoFillBackground (true);
 
 	// View structure
-	auto window_structure = new QVBoxLayout;
+	auto * window_structure = new QVBoxLayout;
 	setLayout (window_structure);
 	{
-		auto slide_panels = new QHBoxLayout;
+		auto * slide_panels = new QHBoxLayout;
 		window_structure->addLayout (slide_panels, 1);
 		{
 			// Current slide preview
-			auto current_slide_panel = new QVBoxLayout;
+			auto * current_slide_panel = new QVBoxLayout;
 			slide_panels->addLayout (current_slide_panel, 6); // 60% screen width
 
 			current_page_ = new PageViewer (Render::Role::CurrentPresenter);
 			current_page_->setObjectName ("presenter/current");
 			current_slide_panel->addWidget (current_page_, 7); // 70% screen height
 
-			auto transition_box = new QHBoxLayout;
+			auto * transition_box = new QHBoxLayout;
 			current_slide_panel->addLayout (transition_box, 3); // 30% screen height
 			{
 				previous_transition_page_ = new PageViewer (Render::Role::Transition);
@@ -151,7 +151,7 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 		}
 		{
 			// Next slide preview, and annotations
-			auto next_slide_and_comment_panel = new QVBoxLayout;
+			auto * next_slide_and_comment_panel = new QVBoxLayout;
 			slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40% screen width
 
 			next_slide_first_page_ = new PageViewer (Render::Role::NextSlide);
@@ -172,7 +172,7 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 	{
 		// Bottom bar with slide number and time
 		// Set font as 2 times bigger than normal
-		auto bottom_bar = new QHBoxLayout;
+		auto * bottom_bar = new QHBoxLayout;
 		window_structure->addLayout (bottom_bar);
 		{
 			slide_number_label_ = new QLabel;

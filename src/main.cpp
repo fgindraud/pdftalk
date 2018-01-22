@@ -23,6 +23,30 @@
 #include <QCommandLineParser>
 #include <QTimer>
 
+/* Main components of PDFTalk:
+ *
+ * Document: stores the PDF information (pages, organization, rendering with poppler).
+ * PageViewer widgets: show a single image (one rendered PDF page).
+ * PresentationView/PresenterView: composed of PageViewers, provide the window layouts.
+ * WindowShifter: create OS windows, contains PresentationView/PresenterView widgets.
+ * Render::System: provider of page renders, answers to requests, caching / prefetching.
+ * Controller: store the presentation state, controls all PageViewers.
+ *
+ * User input (shortcuts, clicks) are detected at widget level.
+ * Window changes (fullscreen, swap) are handled directly by WindowShifter/Window container.
+ * All other actions are redirected to the controller.
+ *
+ * The controller updates it internal state using presentation structure from the PDF document.
+ * It then sends signals to PageViewers to indicate the new shown page for each.
+ * It also updates the annotation / slide number / timer widgets.
+ *
+ * PageViewers will then request new images (page + render size) from the render system.
+ * The render system will answer later with rendered pages.
+ * The render system performs caching and pre-rendering of pages.
+ * This is done according to request data : widget size, current page, role, movement.
+ * The renderer only interacts with PageViewers (not the controller).
+ */
+
 int main (int argc, char * argv[]) {
 	// Qt setup
 	QApplication app (argc, argv);

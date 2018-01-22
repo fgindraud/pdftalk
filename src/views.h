@@ -26,18 +26,18 @@ class Base;
 #include <QPixmap>
 #include <QWidget>
 
+/* This widget will show a PDF page (using a QLabel).
+ * It is shown maximized (keeping aspect ratio), and centered.
+ *
+ * The current pixmap is indicated by a Render::Info structure.
+ * This struct indicates which page is shown, and at which rendered size.
+ * It will be updated by the Controller during transitions (change_page).
+ *
+ * Requests for Pixmaps will go through the Rendering system.
+ *
+ * This widget also catches click events and will activate the page actions accordingly.
+ */
 class PageViewer : public QLabel {
-	/* This widget will show a PDF page (using a QLabel).
-	 * It is shown maximized (keeping aspect ratio), and centered.
-	 *
-	 * The current pixmap is indicated by a Render::Info structure.
-	 * This struct indicates which page is shown, and at which rendered size.
-	 * It will be updated by the Controller during transitions (change_page).
-	 *
-	 * Requests for Pixmaps will go through the Rendering system.
-	 *
-	 * This widget also catches click events and will activate the page actions accordingly.
-	 */
 	Q_OBJECT
 
 private:
@@ -66,16 +66,19 @@ private:
 	void update_label (const PageInfo * new_page);
 };
 
+// Just one PageViewer, but also set a black background.
 class PresentationView : public PageViewer {
-	// Just one PageViewer, but also set a black background.
 	Q_OBJECT
 
 public:
 	explicit PresentationView (QWidget * parent = nullptr);
 };
 
+/* Presenter view.
+ * Contains multiple PageViewers: current page, next slide, transitions if applicable.
+ * Also show the timer, annotations, slide numbering.
+ */
 class PresenterView : public QWidget {
-	//
 	Q_OBJECT
 
 private:

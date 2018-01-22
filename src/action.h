@@ -22,13 +22,15 @@ class Controller;
 #include <QString>
 
 namespace Action {
+/* All clickable actions derive from Base.
+ * Base provides a common rect field to identify the clickable rectangle.
+ * Sub-classes can then overload execute, which is called on a click.
+ *
+ * Actions will always use the Controller API to change the presentation status.
+ *
+ * Actions are extracted from the document in document.cpp.
+ */
 class Base {
-	/* All clickable actions derive from Base.
-	 * Base provides a common rect field to identify the clickable rectangle.
-	 * Sub-classes can then overload execute, which is called on a click.
-	 *
-	 * Actions are extracted from the document in document.cpp.
-	 */
 private:
 	QRectF rect_; // In relative [0,1] coordinates
 public:
@@ -39,11 +41,13 @@ public:
 	bool activated (const QPointF & point) const { return rect_.contains (point); }
 };
 
+// Quit the application
 class Quit : public Base {
 public:
 	void execute (Controller &) const Q_DECL_OVERRIDE;
 };
 
+// Open an url in a Browser
 class Browser : public Base {
 private:
 	QString url_;

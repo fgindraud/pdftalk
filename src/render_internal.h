@@ -67,8 +67,8 @@ std::pair<Compressed *, QPixmap> make_render (const Info & render_info);
  */
 QPixmap make_pixmap_from_compressed_render (const Compressed & render);
 
+// "Render a page" task for QThreadPool.
 class Task : public QObject, public QRunnable {
-	// "Render a page" task for QThreadPool.
 	Q_OBJECT
 
 private:
@@ -91,14 +91,13 @@ public:
 	}
 };
 
+/* Caching system (internals).
+ * Stores compressed renders in a cache to avoid rerendering stuff later.
+ * Rendering is done through Tasks in a QThreadPool.
+ *
+ * being_rendered tracks ongoing renders, preventing double rendering.
+ */
 class SystemPrivate : public QObject {
-	/* Caching system (internals).
-	 * Stores compressed renders in a cache to avoid rerendering stuff later.
-	 * Rendering is done through Tasks in a QThreadPool.
-	 *
-	 *
-	 * being_rendered tracks ongoing renders, preventing double rendering.
-	 */
 	Q_OBJECT
 
 private:
