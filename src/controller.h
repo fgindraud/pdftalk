@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "render.h"
 class Document;
 class PageInfo;
 namespace Action {
@@ -71,10 +72,10 @@ public:
 	explicit Controller (const Document & document);
 
 signals:
-	void current_page_changed (const PageInfo * new_page);
-	void next_slide_first_page_changed (const PageInfo * new_page);
-	void next_transition_page_changed (const PageInfo * new_page);
-	void previous_transition_page_changed (const PageInfo * new_page);
+	void current_page_changed (const PageInfo * new_page, Render::Cause cause);
+	void next_slide_first_page_changed (const PageInfo * new_page, Render::Cause cause);
+	void next_transition_page_changed (const PageInfo * new_page, Render::Cause cause);
+	void previous_transition_page_changed (const PageInfo * new_page, Render::Cause cause);
 
 	void slide_changed (int new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
@@ -100,8 +101,9 @@ public slots:
 	void reset ();
 
 private:
-	// Impl detail, updates all views
-	void update_views ();
+	// Impl detail
+	void update_views (Render::Cause cause);
+	void change_page (int new_page_index, Render::Cause cause);
 };
 
 // Sets keyboard shortcuts for the controller in a QWidget.

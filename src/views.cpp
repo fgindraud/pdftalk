@@ -69,9 +69,9 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	}
 }
 
-void PageViewer::change_page (const PageInfo * new_page) {
+void PageViewer::change_page (const PageInfo * new_page, Render::Cause cause) {
 	if (new_page != render_.page ())
-		update_label (new_page, Render::Cause::RandomMove); // FIXME
+		update_label (new_page, cause);
 }
 void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixmap) {
 	// Filter to only use the requested pixmaps
@@ -81,7 +81,7 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 	}
 }
 
-void PageViewer::update_label (const PageInfo * new_page, const Render::Cause & cause) {
+void PageViewer::update_label (const PageInfo * new_page, Render::Cause cause) {
 	render_ = Render::Info{new_page, size ()};
 
 	static constexpr int pixmap_size_limit_px = 10;

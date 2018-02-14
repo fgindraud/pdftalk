@@ -61,11 +61,11 @@ signals:
 	void request_render (Render::Request request);
 
 public slots:
-	void change_page (const PageInfo * new_page);
+	void change_page (const PageInfo * new_page, Render::Cause cause);
 	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_page, const Render::Cause & cause);
+	void update_label (const PageInfo * new_page, Render::Cause cause);
 };
 
 // Just one PageViewer, but also set a black background.

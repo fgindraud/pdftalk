@@ -51,8 +51,8 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 
 // Render Role
 
-QDebug operator<< (QDebug d, const Role & role) {
-	auto select_str = [](const Role & role) -> const char * {
+QDebug operator<< (QDebug d, Role role) {
+	auto select_str = [](Role role) -> const char * {
 		switch (role) {
 		case Role::CurrentPublic:
 			return "CurrentPublic";
@@ -72,8 +72,8 @@ QDebug operator<< (QDebug d, const Role & role) {
 
 // Render Cause
 
-QDebug operator<< (QDebug d, const Cause & cause) {
-	auto select_str = [](const Cause & cause) -> const char * {
+QDebug operator<< (QDebug d, Cause cause) {
+	auto select_str = [](Cause cause) -> const char * {
 		switch (cause) {
 		case Cause::Resize:
 			return "Resize";
@@ -93,7 +93,7 @@ QDebug operator<< (QDebug d, const Cause & cause) {
 
 // Render Request
 
-Request::Request (const Info & info, const QSize & box, const Role & role, const Cause & cause)
+Request::Request (const Info & info, const QSize & box, Role role, Cause cause)
     : Info (info), box_size_ (box), role_ (role), cause_ (cause) {
 	Q_ASSERT (!info.isNull ());
 	Q_ASSERT (info.size () == info.page ()->render_size (box));
@@ -136,7 +136,7 @@ void System::request_render (const Request & request) {
 }
 
 void SystemPrivate::request_render (const Request & request) {
-	qDebug () << "request    " << request << request.role () << request.cause();
+	qDebug () << "request    " << request << request.role () << request.cause ();
 
 	// Handle request
 	const Compressed * compressed_render = cache_.object (request);

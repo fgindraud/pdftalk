@@ -65,18 +65,13 @@ Controller::Controller (const Document & document) : document_ (document) {
 }
 
 void Controller::go_to_page_index (int index) {
-	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
-		current_page_ = index;
-		qDebug () << "# current  " << document_.page (current_page_);
-		timer_start ();
-		update_views ();
-	}
+	change_page (index, Render::Cause::RandomMove);
 }
 void Controller::go_to_next_page () {
-	go_to_page_index (current_page_ + 1);
+	change_page (current_page_ + 1, Render::Cause::ForwardMove);
 }
 void Controller::go_to_previous_page () {
-	go_to_page_index (current_page_ - 1);
+	change_page (current_page_ - 1, Render::Cause::BackwardMove);
 }
 void Controller::go_to_first_page () {
 	go_to_page_index (0);
@@ -90,20 +85,31 @@ void Controller::execute_action (const Action::Base * action) {
 }
 
 void Controller::reset () {
+	// Does not start timer !
 	current_page_ = 0;
-	update_views ();
+	qDebug () << "### reset ###";
+	update_views (Render::Cause::RandomMove);
 	timer_reset ();
 }
 
-void Controller::update_views () {
+void Controller::update_views (Render::Cause cause) {
 	const auto & page = document_.page (current_page_);
-	emit current_page_changed (&page);
-	emit next_slide_first_page_changed (page.next_slide_first_page ());
-	emit next_transition_page_changed (page.next_transition_page ());
-	emit previous_transition_page_changed (page.previous_transition_page ());
+	emit current_page_changed (&page, cause);
+	emit next_slide_first_page_changed (page.next_slide_first_page (), cause);
+	emit next_transition_page_changed (page.next_transition_page (), cause);
+	emit previous_transition_page_changed (page.previous_transition_page (), cause);
 	emit slide_changed (page.slide_index ());
 	const auto & slide = document_.slide (page.slide_index ());
 	emit annotations_changed (slide.annotations ());
+}
+
+void Controller::change_page (int index, Render::Cause cause) {
+	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
+		current_page_ = index;
+		qDebug () << "# current  " << document_.page (current_page_);
+		timer_start ();
+		update_views (cause);
+	}
 }
 
 // Shortcuts
