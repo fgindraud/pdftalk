@@ -53,7 +53,14 @@ QDebug operator<< (QDebug d, const Info & render_info);
  * Used to select a prefetching strategy in the renderer system.
  * Public should be prefetched more aggressively than presenter view roles.
  */
-enum class Role { CurrentPublic, CurrentPresenter, NextSlide, Transition, Unknown };
+enum class Role {
+	CurrentPublic,
+	CurrentPresenter,
+	NextSlide,
+	NextTransition,
+	PrevTransition,
+	Unknown
+};
 QDebug operator<< (QDebug d, Role role);
 
 /* Render cause.

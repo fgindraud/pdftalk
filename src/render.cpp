@@ -60,8 +60,10 @@ QDebug operator<< (QDebug d, Role role) {
 			return "CurrentPresenter";
 		case Role::NextSlide:
 			return "NextSlide";
-		case Role::Transition:
-			return "Transition";
+		case Role::NextTransition:
+			return "NextTransition";
+		case Role::PrevTransition:
+			return "PrevTransition";
 		default:
 			return "Unknown";
 		}
