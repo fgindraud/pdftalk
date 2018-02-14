@@ -27,7 +27,7 @@
 
 // PageViewer
 
-PageViewer::PageViewer (const Render::Role & role, QWidget * parent)
+PageViewer::PageViewer (const ViewRole & role, QWidget * parent)
     : QLabel (parent), role_ (role) {
 	setScaledContents (false);
 	setAlignment (Qt::AlignCenter);
@@ -49,7 +49,7 @@ QSize PageViewer::sizeHint () const {
 }
 
 void PageViewer::resizeEvent (QResizeEvent *) {
-	update_label (render_.page (), Render::Cause::Resize);
+	update_label (render_.page (), RedrawCause::Resize);
 }
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	if (event->button () == Qt::LeftButton && !size ().isEmpty () && !render_.isNull ()) {
@@ -69,7 +69,7 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	}
 }
 
-void PageViewer::change_page (const PageInfo * new_page, Render::Cause cause) {
+void PageViewer::change_page (const PageInfo * new_page, RedrawCause cause) {
 	if (new_page != render_.page ())
 		update_label (new_page, cause);
 }
@@ -81,7 +81,7 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 	}
 }
 
-void PageViewer::update_label (const PageInfo * new_page, Render::Cause cause) {
+void PageViewer::update_label (const PageInfo * new_page, RedrawCause cause) {
 	render_ = Render::Info{new_page, size ()};
 
 	static constexpr int pixmap_size_limit_px = 10;
@@ -96,7 +96,7 @@ void PageViewer::update_label (const PageInfo * new_page, Render::Cause cause) {
 // PresentationView
 
 PresentationView::PresentationView (QWidget * parent)
-    : PageViewer (Render::Role::CurrentPublic, parent) {
+    : PageViewer (ViewRole::CurrentPublic, parent) {
 	// Title
 	setWindowTitle (tr ("Presentation screen"));
 	// Black background
@@ -132,20 +132,20 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 			auto * current_slide_panel = new QVBoxLayout;
 			slide_panels->addLayout (current_slide_panel, 6); // 60% screen width
 
-			current_page_ = new PageViewer (Render::Role::CurrentPresenter);
+			current_page_ = new PageViewer (ViewRole::CurrentPresenter);
 			current_page_->setObjectName ("presenter/current");
 			current_slide_panel->addWidget (current_page_, 7); // 70% screen height
 
 			auto * transition_box = new QHBoxLayout;
 			current_slide_panel->addLayout (transition_box, 3); // 30% screen height
 			{
-				previous_transition_page_ = new PageViewer (Render::Role::PrevTransition);
+				previous_transition_page_ = new PageViewer (ViewRole::PrevTransition);
 				previous_transition_page_->setObjectName ("presenter/prev_transition");
 				transition_box->addWidget (previous_transition_page_);
 
 				transition_box->addStretch ();
 
-				next_transition_page_ = new PageViewer (Render::Role::NextTransition);
+				next_transition_page_ = new PageViewer (ViewRole::NextTransition);
 				next_transition_page_->setObjectName ("presenter/next_transition");
 				transition_box->addWidget (next_transition_page_);
 			}
@@ -157,7 +157,7 @@ PresenterView::PresenterView (int nb_slides, QWidget * parent)
 			auto * next_slide_and_comment_panel = new QVBoxLayout;
 			slide_panels->addLayout (next_slide_and_comment_panel, 4); // 40% screen width
 
-			next_slide_first_page_ = new PageViewer (Render::Role::NextSlide);
+			next_slide_first_page_ = new PageViewer (ViewRole::NextSlide);
 			next_slide_first_page_->setObjectName ("presenter/next_slide");
 			next_slide_and_comment_panel->addWidget (next_slide_first_page_);
 

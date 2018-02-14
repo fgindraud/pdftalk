@@ -49,58 +49,14 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 	return d;
 }
 
-// Render Role
-
-QDebug operator<< (QDebug d, Role role) {
-	auto select_str = [](Role role) -> const char * {
-		switch (role) {
-		case Role::CurrentPublic:
-			return "CurrentPublic";
-		case Role::CurrentPresenter:
-			return "CurrentPresenter";
-		case Role::NextSlide:
-			return "NextSlide";
-		case Role::NextTransition:
-			return "NextTransition";
-		case Role::PrevTransition:
-			return "PrevTransition";
-		default:
-			return "Unknown";
-		}
-	};
-	d << select_str (role);
-	return d;
-}
-
-// Render Cause
-
-QDebug operator<< (QDebug d, Cause cause) {
-	auto select_str = [](Cause cause) -> const char * {
-		switch (cause) {
-		case Cause::Resize:
-			return "Resize";
-		case Cause::ForwardMove:
-			return "ForwardMove";
-		case Cause::BackwardMove:
-			return "BackwardMove";
-		case Cause::RandomMove:
-			return "RandomMove";
-		default:
-			return "Unknown";
-		}
-	};
-	d << select_str (cause);
-	return d;
-}
-
 // Render Request
 
-Request::Request (const Info & info, const QSize & box, Role role, Cause cause)
+Request::Request (const Info & info, const QSize & box, ViewRole role, RedrawCause cause)
     : Info (info), box_size_ (box), role_ (role), cause_ (cause) {
 	Q_ASSERT (!info.isNull ());
 	Q_ASSERT (info.size () == info.page ()->render_size (box));
-	Q_ASSERT (role != Role::Unknown);
-	Q_ASSERT (cause != Cause::Unknown);
+	Q_ASSERT (role != ViewRole::Unknown);
+	Q_ASSERT (cause != RedrawCause::Unknown);
 }
 
 // Rendering, Compressing / Uncompressing primitives

@@ -17,7 +17,6 @@
 #include "controller.h"
 #include "action.h"
 #include "document.h"
-#include "render.h"
 
 #include <QDebug>
 #include <QShortcut>
@@ -58,6 +57,50 @@ void Timing::start_or_resume_timing () {
 	emit_update (); // Pause status changed
 }
 
+// ViewRole
+
+QDebug operator<< (QDebug d, ViewRole role) {
+	auto select_str = [](ViewRole role) -> const char * {
+		switch (role) {
+		case ViewRole::CurrentPublic:
+			return "CurrentPublic";
+		case ViewRole::CurrentPresenter:
+			return "CurrentPresenter";
+		case ViewRole::NextSlide:
+			return "NextSlide";
+		case ViewRole::NextTransition:
+			return "NextTransition";
+		case ViewRole::PrevTransition:
+			return "PrevTransition";
+		default:
+			return "Unknown";
+		}
+	};
+	d << select_str (role);
+	return d;
+}
+
+// RedrawCause
+
+QDebug operator<< (QDebug d, RedrawCause cause) {
+	auto select_str = [](RedrawCause cause) -> const char * {
+		switch (cause) {
+		case RedrawCause::Resize:
+			return "Resize";
+		case RedrawCause::ForwardMove:
+			return "ForwardMove";
+		case RedrawCause::BackwardMove:
+			return "BackwardMove";
+		case RedrawCause::RandomMove:
+			return "RandomMove";
+		default:
+			return "Unknown";
+		}
+	};
+	d << select_str (cause);
+	return d;
+}
+
 // Controller
 
 Controller::Controller (const Document & document) : document_ (document) {
@@ -65,13 +108,13 @@ Controller::Controller (const Document & document) : document_ (document) {
 }
 
 void Controller::go_to_page_index (int index) {
-	change_page (index, Render::Cause::RandomMove);
+	change_page (index, RedrawCause::RandomMove);
 }
 void Controller::go_to_next_page () {
-	change_page (current_page_ + 1, Render::Cause::ForwardMove);
+	change_page (current_page_ + 1, RedrawCause::ForwardMove);
 }
 void Controller::go_to_previous_page () {
-	change_page (current_page_ - 1, Render::Cause::BackwardMove);
+	change_page (current_page_ - 1, RedrawCause::BackwardMove);
 }
 void Controller::go_to_first_page () {
 	go_to_page_index (0);
@@ -88,11 +131,11 @@ void Controller::reset () {
 	// Does not start timer !
 	current_page_ = 0;
 	qDebug () << "### reset ###";
-	update_views (Render::Cause::RandomMove);
+	update_views (RedrawCause::RandomMove);
 	timer_reset ();
 }
 
-void Controller::update_views (Render::Cause cause) {
+void Controller::update_views (RedrawCause cause) {
 	const auto & page = document_.page (current_page_);
 	emit current_page_changed (&page, cause);
 	emit next_slide_first_page_changed (page.next_slide_first_page (), cause);
@@ -103,7 +146,7 @@ void Controller::update_views (Render::Cause cause) {
 	emit annotations_changed (slide.annotations ());
 }
 
-void Controller::change_page (int index, Render::Cause cause) {
+void Controller::change_page (int index, RedrawCause cause) {
 	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 		current_page_ = index;
 		qDebug () << "# current  " << document_.page (current_page_);

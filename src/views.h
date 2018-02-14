@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "controller.h"
 #include "render.h"
 class PageInfo;
 namespace Action {
@@ -43,11 +44,11 @@ class PageViewer : public QLabel {
 
 private:
 	Render::Info render_{};
-	Render::Role role_;
+	ViewRole role_;
 	bool requested_a_pixmap_{false};
 
 public:
-	explicit PageViewer (const Render::Role & role, QWidget * parent = nullptr);
+	explicit PageViewer (const ViewRole & role, QWidget * parent = nullptr);
 
 	// Layouting info
 	int heightForWidth (int w) const Q_DECL_FINAL;
@@ -61,11 +62,11 @@ signals:
 	void request_render (Render::Request request);
 
 public slots:
-	void change_page (const PageInfo * new_page, Render::Cause cause);
+	void change_page (const PageInfo * new_page, RedrawCause cause);
 	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_page, Render::Cause cause);
+	void update_label (const PageInfo * new_page, RedrawCause cause);
 };
 
 // Just one PageViewer, but also set a black background.

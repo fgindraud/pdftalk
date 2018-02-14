@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "controller.h"
 class PageInfo;
 
 #include <QDebug>
@@ -49,27 +50,6 @@ bool operator== (const Info & a, const Info & b);
 uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
-/* Render role.
- * Used to select a prefetching strategy in the renderer system.
- * Public should be prefetched more aggressively than presenter view roles.
- */
-enum class Role {
-	CurrentPublic,
-	CurrentPresenter,
-	NextSlide,
-	NextTransition,
-	PrevTransition,
-	Unknown
-};
-QDebug operator<< (QDebug d, Role role);
-
-/* Render cause.
- * What event triggered a render.
- * Used to decide how to prefetch.
- */
-enum class Cause { Resize, ForwardMove, BackwardMove, RandomMove, Unknown };
-QDebug operator<< (QDebug d, Cause cause);
-
 /* Represent a render request comming from one of the views.
  * A view will request a render of a specific page, to fit within the view space.
  * A request must have a valid render info.
@@ -80,16 +60,16 @@ QDebug operator<< (QDebug d, Cause cause);
 class Request : public Info {
 private:
 	QSize box_size_{};
-	Role role_{Role::Unknown};
-	Cause cause_{Cause::Unknown};
+	ViewRole role_{ViewRole::Unknown};
+	RedrawCause cause_{RedrawCause::Unknown};
 
 public:
 	Request () = default; // Required by Qt Moc, should not be used otherwise
-	Request (const Info & info, const QSize & box, Role role, Cause cause);
+	Request (const Info & info, const QSize & box, ViewRole role, RedrawCause cause);
 
 	const QSize & box_size () const noexcept { return box_size_; }
-	Role role () const noexcept { return role_; }
-	Cause cause () const noexcept { return cause_; }
+	ViewRole role () const noexcept { return role_; }
+	RedrawCause cause () const noexcept { return cause_; }
 };
 
 /* Global rendering system.
