@@ -80,6 +80,22 @@ QDebug operator<< (QDebug d, ViewRole role) {
 	return d;
 }
 
+const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role) {
+	if (current_page == nullptr)
+		return nullptr;
+
+	switch (role) {
+	case ViewRole::NextSlide:
+		return current_page->next_slide_first_page ();
+	case ViewRole::NextTransition:
+		return current_page->next_transition_page ();
+	case ViewRole::PrevTransition:
+		return current_page->previous_transition_page ();
+	default:
+		return current_page;
+	}
+}
+
 // RedrawCause
 
 QDebug operator<< (QDebug d, RedrawCause cause) {

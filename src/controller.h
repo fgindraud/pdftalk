@@ -72,10 +72,14 @@ enum class ViewRole {
 };
 QDebug operator<< (QDebug d, ViewRole role);
 
+/* Page to show in the given role for the given current page.
+ * nullptr indicates no page.
+ */
+const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role);
+
 // TODO change model: controller only maintains current page / slide info
 // page_for_role gives the shown page for (current_page, role).
 // views use that to select which page is rendered
-const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role);
 
 /* Redraw cause.
  *
