@@ -53,27 +53,36 @@ QDebug operator<< (QDebug d, const Info & render_info);
  * Used to select a prefetching strategy in the renderer system.
  * Public should be prefetched more aggressively than presenter view roles.
  */
-enum class Role { CurrentPublic, CurrentPresenter, NextSlide, Transition, NoRole };
+enum class Role { CurrentPublic, CurrentPresenter, NextSlide, Transition, Unknown };
 QDebug operator<< (QDebug d, const Role & role);
+
+/* Render cause.
+ * What event triggered a render.
+ * Used to decide how to prefetch.
+ */
+enum class Cause { Resize, ForwardMove, BackwardMove, RandomMove, Unknown };
+QDebug operator<< (QDebug d, const Cause & cause);
 
 /* Represent a render request comming from one of the views.
  * A view will request a render of a specific page, to fit within the view space.
  * A request must have a valid render info.
  *
  * The request will contain the actual render info (Info).
- * Additional informations for prefetching: box size, render role.
+ * Additional informations for prefetching: box size, render role & cause.
  */
 class Request : public Info {
 private:
 	QSize box_size_{};
-	Role role_{Role::NoRole};
+	Role role_{Role::Unknown};
+	Cause cause_{Cause::Unknown};
 
 public:
 	Request () = default; // Required by Qt Moc, should not be used otherwise
-	Request (const Info & info, const QSize & box, const Role & role);
+	Request (const Info & info, const QSize & box, const Role & role, const Cause & cause);
 
 	const QSize & box_size () const noexcept { return box_size_; }
 	const Role & role () const noexcept { return role_; }
+	const Cause & cause () const noexcept { return cause_; }
 };
 
 /* Global rendering system.

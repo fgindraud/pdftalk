@@ -63,19 +63,42 @@ QDebug operator<< (QDebug d, const Role & role) {
 		case Role::Transition:
 			return "Transition";
 		default:
-			return "NoRole";
+			return "Unknown";
 		}
 	};
 	d << select_str (role);
 	return d;
 }
 
+// Render Cause
+
+QDebug operator<< (QDebug d, const Cause & cause) {
+	auto select_str = [](const Cause & cause) -> const char * {
+		switch (cause) {
+		case Cause::Resize:
+			return "Resize";
+		case Cause::ForwardMove:
+			return "ForwardMove";
+		case Cause::BackwardMove:
+			return "BackwardMove";
+		case Cause::RandomMove:
+			return "RandomMove";
+		default:
+			return "Unknown";
+		}
+	};
+	d << select_str (cause);
+	return d;
+}
+
 // Render Request
 
-Request::Request (const Info & info, const QSize & box, const Role & role)
-    : Info (info), box_size_ (box), role_ (role) {
+Request::Request (const Info & info, const QSize & box, const Role & role, const Cause & cause)
+    : Info (info), box_size_ (box), role_ (role), cause_ (cause) {
 	Q_ASSERT (!info.isNull ());
 	Q_ASSERT (info.size () == info.page ()->render_size (box));
+	Q_ASSERT (role != Role::Unknown);
+	Q_ASSERT (cause != Cause::Unknown);
 }
 
 // Rendering, Compressing / Uncompressing primitives
@@ -113,7 +136,7 @@ void System::request_render (const Request & request) {
 }
 
 void SystemPrivate::request_render (const Request & request) {
-	qDebug () << "request    " << request << request.role ();
+	qDebug () << "request    " << request << request.role () << request.cause();
 
 	// Handle request
 	const Compressed * compressed_render = cache_.object (request);

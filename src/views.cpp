@@ -49,7 +49,7 @@ QSize PageViewer::sizeHint () const {
 }
 
 void PageViewer::resizeEvent (QResizeEvent *) {
-	update_label (render_.page ());
+	update_label (render_.page (), Render::Cause::Resize);
 }
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	if (event->button () == Qt::LeftButton && !size ().isEmpty () && !render_.isNull ()) {
@@ -71,7 +71,7 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 
 void PageViewer::change_page (const PageInfo * new_page) {
 	if (new_page != render_.page ())
-		update_label (new_page);
+		update_label (new_page, Render::Cause::RandomMove); // FIXME
 }
 void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixmap) {
 	// Filter to only use the requested pixmaps
@@ -81,7 +81,7 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 	}
 }
 
-void PageViewer::update_label (const PageInfo * new_page) {
+void PageViewer::update_label (const PageInfo * new_page, const Render::Cause & cause) {
 	render_ = Render::Info{new_page, size ()};
 
 	static constexpr int pixmap_size_limit_px = 10;
@@ -89,7 +89,7 @@ void PageViewer::update_label (const PageInfo * new_page) {
 	// Ask for a new pixmap only if useful
 	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px) {
 		requested_a_pixmap_ = true;
-		emit request_render (Render::Request{render_, size (), role_});
+		emit request_render (Render::Request{render_, size (), role_, cause});
 	}
 }
 

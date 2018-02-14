@@ -43,7 +43,7 @@ class PageViewer : public QLabel {
 
 private:
 	Render::Info render_{};
-	Render::Role role_{Render::Role::NoRole};
+	Render::Role role_;
 	bool requested_a_pixmap_{false};
 
 public:
@@ -65,7 +65,7 @@ public slots:
 	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_page);
+	void update_label (const PageInfo * new_page, const Render::Cause & cause);
 };
 
 // Just one PageViewer, but also set a black background.
