@@ -124,13 +124,13 @@ Controller::Controller (const Document & document) : document_ (document) {
 }
 
 void Controller::go_to_page_index (int index) {
-	change_page (index, RedrawCause::RandomMove);
+	navigation_change_page (index, RedrawCause::RandomMove);
 }
 void Controller::go_to_next_page () {
-	change_page (current_page_ + 1, RedrawCause::ForwardMove);
+	navigation_change_page (current_page_ + 1, RedrawCause::ForwardMove);
 }
 void Controller::go_to_previous_page () {
-	change_page (current_page_ - 1, RedrawCause::BackwardMove);
+	navigation_change_page (current_page_ - 1, RedrawCause::BackwardMove);
 }
 void Controller::go_to_first_page () {
 	go_to_page_index (0);
@@ -147,28 +147,25 @@ void Controller::reset () {
 	// Does not start timer !
 	current_page_ = 0;
 	qDebug () << "### reset ###";
-	update_views (RedrawCause::RandomMove);
+	update_gui (RedrawCause::RandomMove);
 	timer_reset ();
 }
 
-void Controller::update_views (RedrawCause cause) {
-	const auto & page = document_.page (current_page_);
-	emit current_page_changed (&page, cause);
-	emit next_slide_first_page_changed (page.next_slide_first_page (), cause);
-	emit next_transition_page_changed (page.next_transition_page (), cause);
-	emit previous_transition_page_changed (page.previous_transition_page (), cause);
-	emit slide_changed (page.slide_index ());
-	const auto & slide = document_.slide (page.slide_index ());
-	emit annotations_changed (slide.annotations ());
-}
-
-void Controller::change_page (int index, RedrawCause cause) {
+void Controller::navigation_change_page (int index, RedrawCause cause) {
 	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 		current_page_ = index;
 		qDebug () << "# current  " << document_.page (current_page_);
+		update_gui (cause);
 		timer_start ();
-		update_views (cause);
 	}
+}
+
+void Controller::update_gui (RedrawCause cause) {
+	const auto & page = document_.page (current_page_);
+	emit current_page_changed (&page, cause);
+	emit slide_changed (page.slide_index ());
+	const auto & slide = document_.slide (page.slide_index ());
+	emit annotations_changed (slide.annotations ());
 }
 
 // Shortcuts

@@ -88,7 +88,7 @@ int main (int argc, char * argv[]) {
 	add_shortcuts_to_widget (control, presentation_view);
 	add_shortcuts_to_widget (control, presenter_view);
 
-	// Link viewers to controller
+	// Link non slide widgets to controller.
 	QObject::connect (&control, &Controller::slide_changed, presenter_view,
 	                  &PresenterView::change_slide);
 	QObject::connect (&control, &Controller::time_changed, presenter_view,
@@ -96,24 +96,16 @@ int main (int argc, char * argv[]) {
 	QObject::connect (&control, &Controller::annotations_changed, presenter_view,
 	                  &PresenterView::change_annotations);
 
-	QObject::connect (&control, &Controller::current_page_changed, presentation_view,
-	                  &PageViewer::change_page);
-	QObject::connect (&control, &Controller::current_page_changed,
-	                  presenter_view->current_page_viewer (), &PageViewer::change_page);
-	QObject::connect (&control, &Controller::next_slide_first_page_changed,
-	                  presenter_view->next_slide_first_page_viewer (), &PageViewer::change_page);
-	QObject::connect (&control, &Controller::next_transition_page_changed,
-	                  presenter_view->next_transition_page_viewer (), &PageViewer::change_page);
-	QObject::connect (&control, &Controller::previous_transition_page_changed,
-	                  presenter_view->previous_transition_page_viewer (), &PageViewer::change_page);
-
-	// Link viewers to actions & caching system
+	// Link slide viewers to controller, actions, caching system
 	auto viewers =
 	    std::initializer_list<PageViewer *>{presentation_view, presenter_view->current_page_viewer (),
 	                                        presenter_view->next_slide_first_page_viewer (),
 	                                        presenter_view->next_transition_page_viewer (),
 	                                        presenter_view->previous_transition_page_viewer ()};
 	for (auto v : viewers) {
+		QObject::connect (&control, &Controller::current_page_changed, v,
+		                  &PageViewer::change_current_page);
+
 		QObject::connect (v, &PageViewer::action_activated, &control, &Controller::execute_action);
 
 		QObject::connect (v, &PageViewer::request_render, &renderer, &Render::System::request_render);

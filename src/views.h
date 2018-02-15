@@ -32,7 +32,9 @@ class Base;
  *
  * The current pixmap is indicated by a Render::Info structure.
  * This struct indicates which page is shown, and at which rendered size.
- * It will be updated by the Controller during transitions (change_page).
+ *
+ * Changes of current presentation page by the controller will trigger change_current_page ().
+ * The new shown page is determined from the current page and the view role, then rendered.
  *
  * Requests for Pixmaps will go through the Rendering system.
  * The rendering system will broadcast request answers: receive_pixmap must filter incoming pixmaps.
@@ -62,11 +64,11 @@ signals:
 	void request_render (Render::Request request);
 
 public slots:
-	void change_page (const PageInfo * new_page, RedrawCause cause);
+	void change_current_page (const PageInfo * new_current_page, RedrawCause cause);
 	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_page, RedrawCause cause);
+	void update_label (const PageInfo * new_shown_page, RedrawCause cause);
 };
 
 // Just one PageViewer, but also set a black background.

@@ -27,8 +27,7 @@
 
 // PageViewer
 
-PageViewer::PageViewer (const ViewRole & role, QWidget * parent)
-    : QLabel (parent), role_ (role) {
+PageViewer::PageViewer (const ViewRole & role, QWidget * parent) : QLabel (parent), role_ (role) {
 	setScaledContents (false);
 	setAlignment (Qt::AlignCenter);
 	setMinimumSize (1, 1); // To prevent nil QLabel when no pixmap is available
@@ -69,9 +68,11 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 	}
 }
 
-void PageViewer::change_page (const PageInfo * new_page, RedrawCause cause) {
-	if (new_page != render_.page ())
-		update_label (new_page, cause);
+void PageViewer::change_current_page (const PageInfo * new_current_page, RedrawCause cause) {
+	const PageInfo * new_shown_page = page_for_role (new_current_page, role_);
+	if (new_shown_page != render_.page ()) {
+		update_label (new_shown_page, cause);
+	}
 }
 void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixmap) {
 	// Filter to only use the requested pixmaps
@@ -81,8 +82,8 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 	}
 }
 
-void PageViewer::update_label (const PageInfo * new_page, RedrawCause cause) {
-	render_ = Render::Info{new_page, size ()};
+void PageViewer::update_label (const PageInfo * new_shown_page, RedrawCause cause) {
+	render_ = Render::Info{new_shown_page, size ()};
 
 	static constexpr int pixmap_size_limit_px = 10;
 	clear (); // Remove old pixmap

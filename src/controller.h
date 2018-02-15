@@ -77,10 +77,6 @@ QDebug operator<< (QDebug d, ViewRole role);
  */
 const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role);
 
-// TODO change model: controller only maintains current page / slide info
-// page_for_role gives the shown page for (current_page, role).
-// views use that to select which page is rendered
-
 /* Redraw cause.
  *
  * Reason for a render request (what triggered it).
@@ -89,8 +85,9 @@ const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role);
 enum class RedrawCause { Resize, ForwardMove, BackwardMove, RandomMove, Unknown };
 QDebug operator<< (QDebug d, RedrawCause cause);
 
-/* Manage a presentation state (which slide is currently viewed).
- * Sends page updates to slide viewers depending on user input.
+/* Manage a presentation state (which slide/page is currently viewed).
+ * Sends signals to indicate changes in timer, current page.
+ * Views will decide what to show from the current_page and their selected roles.
  */
 class Controller : public QObject {
 	Q_OBJECT
@@ -104,11 +101,7 @@ public:
 	explicit Controller (const Document & document);
 
 signals:
-	void current_page_changed (const PageInfo * new_page, RedrawCause cause);
-	void next_slide_first_page_changed (const PageInfo * new_page, RedrawCause cause);
-	void next_transition_page_changed (const PageInfo * new_page, RedrawCause cause);
-	void previous_transition_page_changed (const PageInfo * new_page, RedrawCause cause);
-
+	void current_page_changed (const PageInfo * new_current_page, RedrawCause cause);
 	void slide_changed (int new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
 	void annotations_changed (QString new_annotations);
@@ -134,8 +127,8 @@ public slots:
 
 private:
 	// Impl detail
-	void update_views (RedrawCause cause);
-	void change_page (int new_page_index, RedrawCause cause);
+	void navigation_change_page (int new_page_index, RedrawCause cause);
+	void update_gui (RedrawCause cause);
 };
 
 // Sets keyboard shortcuts for the controller in a QWidget.
