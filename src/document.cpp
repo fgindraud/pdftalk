@@ -18,11 +18,13 @@
 #include "action.h"
 #include "utils.h"
 
+#include <QCoreApplication>
 #include <QDebugStateSaver>
 #include <QFile>
 #include <QImage>
 #include <QTextStream>
 #include <algorithm>
+#include <cstdio>
 #include <poppler-qt5.h>
 
 // PageInfo
@@ -144,35 +146,56 @@ QDebug operator<< (QDebug d, const PageInfo & page) {
 
 // Document
 
-Document::Document (const QString & filename) : document_ (Poppler::Document::load (filename)) {
-	// Check document has been opened
-	if (!document_)
-		qFatal ("Poppler: unable to open document \%s\"", qPrintable (filename));
-	if (document_->isLocked ())
-		qFatal ("Poppler: document is locked \"%s\"", qPrintable (filename));
-
-	// Enable antialiasing, it is better looking
-	document_->setRenderHint (Poppler::Document::Antialiasing, true);
-	document_->setRenderHint (Poppler::Document::TextAntialiasing, true);
-
-	// Create raw PageInfo structs
-	auto nb_pages = static_cast<int> (document_->numPages ());
-	if (nb_pages <= 0)
-		qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename));
-	pages_.reserve (nb_pages);
-	for (int i = 0; i < nb_pages; ++i) {
-		auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
-		if (!p)
-			qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename));
-		pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
-	}
-
-	discover_document_structure ();
-	read_annotations_from_file (filename + "pc"); // TODO config point
-}
+Document::Document (const QString & filename, std::unique_ptr<Poppler::Document> document)
+    : filename_ (filename), document_ (std::move (document)) {}
 Document::~Document () = default;
 
-void Document::discover_document_structure () {
+std::unique_ptr<const Document> Document::open (const QString & filename) {
+	auto tr = [](const char * str) { return qApp->translate ("Document::open", str); };
+
+	auto poppler_doc = std::unique_ptr<Poppler::Document> (Poppler::Document::load (filename));
+
+	// Check document has been opened
+	if (!poppler_doc) {
+		QTextStream (stderr) << tr ("Error: Poppler: unable to open document \"%1\"\n").arg (filename);
+		return nullptr;
+	}
+	if (poppler_doc->isLocked ()) {
+		QTextStream (stderr) << tr ("Error: Poppler: document is locked \"%1\"\n").arg (filename);
+		return nullptr;
+	}
+
+	// Enable antialiasing, it is better looking
+	poppler_doc->setRenderHint (Poppler::Document::Antialiasing, true);
+	poppler_doc->setRenderHint (Poppler::Document::TextAntialiasing, true);
+
+	// Document creation and staged init
+	auto document = std::unique_ptr<Document>{new Document (filename, std::move (poppler_doc))};
+
+	if (!document->discover_document_structure ()) {
+		return nullptr;
+	}
+
+	document->read_annotations_from_file (filename + "pc"); // TODO config point
+
+	return std::move (document);
+}
+//FIXME improve init api
+bool Document::discover_document_structure () {
+	// Create raw PageInfo structs
+	{
+		auto nb_pages = static_cast<int> (document_->numPages ());
+		if (nb_pages <= 0)
+			qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename_));
+		pages_.reserve (nb_pages);
+		for (int i = 0; i < nb_pages; ++i) {
+			auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
+			if (!p)
+				qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename_));
+			pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
+		}
+	}
+
 	// Parse all pages, and create SlideInfo structures each time we "change of slide"
 	QString current_slide_label = page (0).label ();
 	slides_.emplace_back (make_unique<SlideInfo> (0));
@@ -206,14 +229,16 @@ void Document::discover_document_structure () {
 			}
 		}
 	}
+	return true;
 }
 
-void Document::read_annotations_from_file (const QString & pdfpc_filename) {
+bool Document::read_annotations_from_file (const QString & pdfpc_filename) {
+	auto tr = [](const char * str) { return qApp->translate ("read_annotations_from_file", str); };
 	QFile pdfpc_file (pdfpc_filename);
 	if (!pdfpc_file.open (QFile::ReadOnly | QFile::Text)) {
-		qWarning ("Unable to open pdfpc file \"%s\", no pdfpc annotations",
-		          qPrintable (pdfpc_filename));
-		return;
+		QTextStream (stderr) << tr ("Warning: Unable to open pdfpc file \"%1\", no pdfpc annotations\n")
+		                            .arg (pdfpc_filename);
+		return false;
 	}
 	QTextStream stream (&pdfpc_file);
 	QString line;
@@ -233,19 +258,26 @@ void Document::read_annotations_from_file (const QString & pdfpc_filename) {
 				bool int_parsed = false;
 				current_slide_index = line.toInt (&int_parsed, 10) - 1;
 				if (!int_parsed || current_slide_index < 0 || current_slide_index >= nb_slides ()) {
-					qWarning ("Malformed slide number in pdfpc file \"%s\", line %d",
-					          qPrintable (pdfpc_filename), line_index);
-					return;
+					QTextStream (stderr)
+					    << tr ("Warning: Malformed slide number in pdfpc file \"%1\", line %2\n")
+					           .arg (pdfpc_filename)
+					           .arg (line_index);
+					return false;
 				}
 			} else {
 				// Annotation line
 				if (current_slide_index < 0 || current_slide_index >= nb_slides ()) {
-					qWarning ("Current slide number out of bounds (%d/%d), in pdfpc file \"%s\", line %d",
-					          current_slide_index, nb_slides (), qPrintable (pdfpc_filename), line_index);
-					return;
+					QTextStream (stderr) << tr ("Warning: Current slide number out of bounds (%1/%2), in "
+					                            "pdfpc file \"%3\", line %4\n")
+					                            .arg (current_slide_index)
+					                            .arg (nb_slides ())
+					                            .arg (pdfpc_filename)
+					                            .arg (line_index);
+					return false;
 				}
 				slide (current_slide_index).append_annotation (line);
 			}
 		}
 	}
+	return true;
 }

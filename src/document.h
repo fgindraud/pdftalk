@@ -144,12 +144,15 @@ public:
  */
 class Document {
 private:
+	QString filename_;
 	std::unique_ptr<Poppler::Document> document_;
 	std::vector<std::unique_ptr<PageInfo>> pages_;
 	std::vector<std::unique_ptr<SlideInfo>> slides_;
 
 public:
-	explicit Document (const QString & filename);
+	// Returns nullptr on error, and prints messages to stderr
+	static std::unique_ptr<const Document> open (const QString & filename);
+
 	~Document ();
 
 	int nb_pages () const { return pages_.size (); }
@@ -159,9 +162,11 @@ public:
 	const SlideInfo & slide (int slide_index) const { return *slides_.at (slide_index); }
 
 private:
-	// Init stuff
+	explicit Document (const QString & filename, std::unique_ptr<Poppler::Document> document);
+	bool discover_document_structure ();
+	bool read_annotations_from_file (const QString & pdfpc_filename);
 	PageInfo & page (int page_index) { return *pages_[page_index]; }
 	SlideInfo & slide (int slide_index) { return *slides_[slide_index]; }
-	void discover_document_structure ();
-	void read_annotations_from_file (const QString & pdfpc_filename);
 };
+
+// Open the pdf document, returns nullptr on error (and print to stderr)

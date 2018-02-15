@@ -103,14 +103,17 @@ int main (int argc, char * argv[]) {
 		}
 	}
 
-	// TODO add nicer error detection on pdf opening...
-	const Document document (arguments[0]);
-	Controller control (document);
+	auto document = Document::open (arguments[0]);
+	if (!document) {
+		return EXIT_FAILURE;
+	}
+
+	Controller control (*document);
 	Render::System renderer (render_cache_size, 1); // TODO prefetch strategy
 
 	// Setup windows
 	auto presentation_view = new PresentationView;
-	auto presenter_view = new PresenterView (document.nb_slides ());
+	auto presenter_view = new PresenterView (document->nb_slides ());
 	add_shortcuts_to_widget (control, presentation_view);
 	add_shortcuts_to_widget (control, presenter_view);
 
