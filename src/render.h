@@ -23,6 +23,12 @@ class PageInfo;
 #include <QPixmap>
 #include <QSize>
 
+/* Conversion between size str and integer size, with suffix support.
+ * ("10k" <-> 10000)
+ */
+QString size_in_bytes_to_string (int size);
+int string_to_size_in_bytes (const QString & size_str);
+
 namespace Render {
 class SystemPrivate;
 

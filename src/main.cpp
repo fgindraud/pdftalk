@@ -22,7 +22,9 @@
 #include "window.h"
 
 #include <QApplication>
+#include <QCommandLineOption>
 #include <QCommandLineParser>
+#include <QStringList>
 #include <QTimer>
 
 /* Main components of PDFTalk:
@@ -64,11 +66,20 @@ int main (int argc, char * argv[]) {
 	qRegisterMetaType<Render::Info> ();
 	qRegisterMetaType<Render::Request> ();
 
+	int render_cache_size = 10 * (1 << 20); // 10MB default
+
 	// Command line parsing
 	QCommandLineParser parser;
 	parser.setApplicationDescription ("PDF presentation tool");
 	parser.addHelpOption ();
 	parser.addPositionalArgument ("pdf_file", QApplication::translate ("main", "PDF file to open"));
+	QCommandLineOption render_cache_size_option (
+	    QStringList () << "c"
+	                   << "cache",
+	    QApplication::translate ("main", "Render cache size (default = %1)")
+	        .arg (size_in_bytes_to_string (render_cache_size)),
+	    QApplication::translate ("main", "size"));
+	parser.addOption (render_cache_size_option);
 	parser.process (app);
 
 	auto arguments = parser.positionalArguments ();
@@ -80,7 +91,7 @@ int main (int argc, char * argv[]) {
 	// TODO add nicer error detection on pdf opening...
 	const Document document (arguments[0]);
 	Controller control (document);
-	Render::System renderer (10000000, 1); // Cache size, 10Mo, TODO program arg
+	Render::System renderer (render_cache_size, 1); // TODO prefetch strategy
 
 	// Setup windows
 	auto presentation_view = new PresentationView;

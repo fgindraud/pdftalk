@@ -18,10 +18,34 @@
 #include "document.h"
 #include "render_internal.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QHash>
 #include <QMetaType>
 #include <QThreadPool>
+
+// Byte size conversion
+
+QString size_in_bytes_to_string (int size) {
+	qreal num = size;
+	qreal increment = 1024.0;
+	static const char * suffixes[] = {QT_TR_NOOP ("B"),
+	                                  QT_TR_NOOP ("KiB"),
+	                                  QT_TR_NOOP ("MiB"),
+	                                  QT_TR_NOOP ("GiB"),
+	                                  QT_TR_NOOP ("TiB"),
+	                                  QT_TR_NOOP ("PiB"),
+	                                  nullptr};
+	int unit_idx = 0;
+	while (num >= increment && suffixes[unit_idx + 1] != nullptr) {
+		unit_idx++;
+		num /= increment;
+	}
+	return QString ().setNum (num, 'f', 2) + qApp->translate ("size_to_string", suffixes[unit_idx]);
+}
+int string_to_size_in_bytes (const QString & size_str) {
+	return 0;
+}
 
 namespace Render {
 // Render Info
@@ -91,6 +115,12 @@ System::System (int cache_size_bytes, int prefetch_window)
 
 void System::request_render (const Request & request) {
 	d_->request_render (request);
+}
+
+SystemPrivate::~SystemPrivate () {
+	qDebug ().noquote () << QString ("# Render cache: used %1 out of %2")
+	                            .arg (size_in_bytes_to_string (cache_.totalCost ()),
+	                                  size_in_bytes_to_string (cache_.maxCost ()));
 }
 
 void SystemPrivate::request_render (const Request & request) {

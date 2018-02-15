@@ -27,6 +27,7 @@
 #include <utility>
 
 /* Internal header of the rendering system.
+ * Header is required for moc to process Task/SystemPrivate classes.
  *
  * My analysis of PDFpc rendering strategy:
  * PDFpc prerenders pages and then compress the bitmap data.
@@ -109,6 +110,8 @@ public:
 	      parent_ (parent),
 	      cache_ (cache_size_bytes),
 	      prefetch_window_ (prefetch_window) {}
+
+	~SystemPrivate ();
 
 	void request_render (const Request & request);
 
