@@ -25,9 +25,11 @@ class PageInfo;
 
 /* Conversion between size str and integer size, with suffix support.
  * ("10k" <-> 10000)
+ *
+ * string_to_size_in_bytes returns a negative value on error.
  */
 QString size_in_bytes_to_string (int size);
-int string_to_size_in_bytes (const QString & size_str);
+int string_to_size_in_bytes (QString size_str);
 
 namespace Render {
 class SystemPrivate;

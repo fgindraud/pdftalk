@@ -25,7 +25,9 @@
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QStringList>
+#include <QTextStream>
 #include <QTimer>
+#include <cstdio>
 
 /* Main components of PDFTalk:
  *
@@ -62,6 +64,8 @@ int main (int argc, char * argv[]) {
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
 
+	auto tr = [&app](const char * s) { return app.translate ("main", s); };
+
 	// Type registration (once before use in connect)
 	qRegisterMetaType<Render::Info> ();
 	qRegisterMetaType<Render::Request> ();
@@ -70,15 +74,14 @@ int main (int argc, char * argv[]) {
 
 	// Command line parsing
 	QCommandLineParser parser;
-	parser.setApplicationDescription ("PDF presentation tool");
+	parser.setApplicationDescription (tr ("PDF presentation tool"));
 	parser.addHelpOption ();
-	parser.addPositionalArgument ("pdf_file", QApplication::translate ("main", "PDF file to open"));
+	parser.addPositionalArgument (tr ("pdf_file"), tr ("PDF file to open"));
 	QCommandLineOption render_cache_size_option (
 	    QStringList () << "c"
 	                   << "cache",
-	    QApplication::translate ("main", "Render cache size (default = %1)")
-	        .arg (size_in_bytes_to_string (render_cache_size)),
-	    QApplication::translate ("main", "size"));
+	    tr ("Render cache size (default = %1)").arg (size_in_bytes_to_string (render_cache_size)),
+	    tr ("size"));
 	parser.addOption (render_cache_size_option);
 	parser.process (app);
 
@@ -86,6 +89,18 @@ int main (int argc, char * argv[]) {
 	if (arguments.size () != 1) {
 		parser.showHelp (EXIT_FAILURE);
 		Q_UNREACHABLE ();
+	}
+
+	if (parser.isSet (render_cache_size_option)) {
+		auto size_str = parser.value (render_cache_size_option);
+		int size = string_to_size_in_bytes (size_str);
+		if (size >= 0) {
+			render_cache_size = size;
+		} else {
+			QTextStream (stderr) << tr ("Error: Invalid cache size: %1 (from \"%2\"), using default\n")
+			                            .arg (size)
+			                            .arg (size_str);
+		}
 	}
 
 	// TODO add nicer error detection on pdf opening...

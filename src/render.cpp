@@ -21,6 +21,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QHash>
+#include <QLocale>
 #include <QMetaType>
 #include <QThreadPool>
 
@@ -41,10 +42,41 @@ QString size_in_bytes_to_string (int size) {
 		unit_idx++;
 		num /= increment;
 	}
-	return QString ().setNum (num, 'f', 2) + qApp->translate ("size_to_string", suffixes[unit_idx]);
+	return QLocale ().toString (num, 'f', 2) +
+	       qApp->translate ("byte_size_conversion", suffixes[unit_idx]);
 }
-int string_to_size_in_bytes (const QString & size_str) {
-	return 0;
+int string_to_size_in_bytes (QString size_str) {
+	int factor = 1;
+
+	// Remove suffix if present. Order in the array is important, first match wins.
+	struct SuffixWithFactor {
+		const char * suffix;
+		int factor;
+	};
+	static const SuffixWithFactor suffixes[] = {
+	    {QT_TR_NOOP ("G"), 1000000000}, {QT_TR_NOOP ("GB"), 1000000000},
+	    {QT_TR_NOOP ("GiB"), 1 << 30},  {QT_TR_NOOP ("M"), 1000000},
+	    {QT_TR_NOOP ("MB"), 1000000},   {QT_TR_NOOP ("MiB"), 1 << 20},
+	    {QT_TR_NOOP ("K"), 1000},       {QT_TR_NOOP ("KB"), 1000},
+	    {QT_TR_NOOP ("KiB"), 1 << 10},  {QT_TR_NOOP ("B"), 1},
+	};
+	for (const auto & s : suffixes) {
+		auto suffix = qApp->translate ("byte_size_conversion", s.suffix);
+		if (size_str.endsWith (suffix, Qt::CaseInsensitive)) {
+			factor = s.factor;
+			size_str.chop (suffix.size ());
+			break;
+		}
+	}
+
+	// Parse value (fails if there is anything but the number)
+	bool ok;
+	auto raw_value = QLocale ().toDouble (size_str, &ok);
+	if (ok) {
+		return static_cast<int> (raw_value * factor);
+	} else {
+		return -1;
+	}
 }
 
 namespace Render {
