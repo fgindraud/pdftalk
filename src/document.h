@@ -98,9 +98,7 @@ public:
 	// Which action is triggered by a click at relative [0,1]x[0,1] coords ?
 	const Action::Base * on_click (const QPointF & coord) const;
 
-private:
 	// Related page links editions by document
-	friend class Document;
 	void set_slide_index (int index) { slide_index_ = index; }
 	void set_next_page (const PageInfo * page) { next_page_ = page; }
 	void set_previous_page (const PageInfo * page) { previous_page_ = page; }
@@ -119,18 +117,17 @@ private:
 	int first_page_index_;
 	QString annotations_; // Annotations from pdfpc
 
-	friend class Document;
-	void append_annotation (const QString & text) {
-		annotations_ += text;
-		if (!text.endsWith ('\n'))
-			annotations_ += '\n';
-	}
-
 public:
 	explicit SlideInfo (int first_page_index) : first_page_index_ (first_page_index) {}
 
 	int first_page_index () const { return first_page_index_; }
 	const QString & annotations () const { return annotations_; }
+
+	void append_annotation (const QString & text) {
+		annotations_ += text;
+		if (!text.endsWith ('\n'))
+			annotations_ += '\n';
+	}
 };
 
 /* Represents an opened pdf document.
@@ -163,10 +160,10 @@ public:
 
 private:
 	explicit Document (const QString & filename, std::unique_ptr<Poppler::Document> document);
+
+	// Init: returns false if failed
 	bool discover_document_structure ();
 	bool read_annotations_from_file (const QString & pdfpc_filename);
-	PageInfo & page (int page_index) { return *pages_[page_index]; }
-	SlideInfo & slide (int slide_index) { return *slides_[slide_index]; }
 };
 
 // Open the pdf document, returns nullptr on error (and print to stderr)

@@ -180,30 +180,37 @@ std::unique_ptr<const Document> Document::open (const QString & filename) {
 
 	return std::move (document);
 }
-//FIXME improve init api
+
 bool Document::discover_document_structure () {
+	auto tr = [](const char * str) { return qApp->translate ("discover_document_structure", str); };
+
 	// Create raw PageInfo structs
-	{
-		auto nb_pages = static_cast<int> (document_->numPages ());
-		if (nb_pages <= 0)
-			qFatal ("Poppler: no pages in the PDF document \"%s\"", qPrintable (filename_));
-		pages_.reserve (nb_pages);
-		for (int i = 0; i < nb_pages; ++i) {
-			auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
-			if (!p)
-				qFatal ("Poppler: unable to load page %d in document \"%s\"", i, qPrintable (filename_));
-			pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
+	const auto nb_pages = static_cast<int> (document_->numPages ());
+	if (nb_pages <= 0) {
+		QTextStream (stderr)
+		    << tr ("Error: Poppler: no pages in the PDF document \"%1\"").arg (filename_);
+		return false;
+	}
+	pages_.reserve (nb_pages);
+	for (int i = 0; i < nb_pages; ++i) {
+		auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
+		if (!p) {
+			QTextStream (stderr) << tr ("Error: Poppler: unable to load page %1 in document \"%2\"")
+			                            .arg (i)
+			                            .arg (filename_);
+			return false;
 		}
+		pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
 	}
 
 	// Parse all pages, and create SlideInfo structures each time we "change of slide"
-	QString current_slide_label = page (0).label ();
+	QString current_slide_label = pages_[0]->label ();
 	slides_.emplace_back (make_unique<SlideInfo> (0));
-	for (int page_index = 0; page_index < nb_pages (); ++page_index) {
-		auto & current = page (page_index);
+	for (int page_index = 0; page_index < nb_pages; ++page_index) {
+		auto & current = *pages_[page_index];
 		// Link to previous page if it exists
 		if (page_index > 0) {
-			auto & prev = page (page_index - 1);
+			auto & prev = *pages_[page_index - 1];
 			current.set_previous_page (&prev);
 			prev.set_next_page (&current);
 		}
@@ -212,7 +219,7 @@ bool Document::discover_document_structure () {
 		if (label != current_slide_label) {
 			// Set "next first page of slide" links of previous pages
 			for (int index = slides_.back ()->first_page_index (); index < page_index; ++index)
-				page (index).set_next_slide_first_page (&current);
+				pages_[index]->set_next_slide_first_page (&current);
 			// Append to slide list
 			slides_.emplace_back (make_unique<SlideInfo> (page_index));
 			current_slide_label = label;
@@ -222,7 +229,7 @@ bool Document::discover_document_structure () {
 		current.set_slide_index (current_slide_index);
 		// Update transition links with previous page
 		if (page_index > 0) {
-			auto & prev = page (page_index - 1);
+			auto & prev = *pages_[page_index - 1];
 			if (prev.slide_index () == current_slide_index) {
 				prev.set_next_transition_page (&current);
 				current.set_previous_transition_page (&prev);
@@ -275,7 +282,7 @@ bool Document::read_annotations_from_file (const QString & pdfpc_filename) {
 					                            .arg (line_index);
 					return false;
 				}
-				slide (current_slide_index).append_annotation (line);
+				slides_[current_slide_index]->append_annotation (line);
 			}
 		}
 	}
