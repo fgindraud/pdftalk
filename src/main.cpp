@@ -76,13 +76,18 @@ int main (int argc, char * argv[]) {
 	QCommandLineParser parser;
 	parser.setApplicationDescription (tr ("PDF presentation tool"));
 	parser.addHelpOption ();
-	parser.addPositionalArgument (tr ("pdf_file"), tr ("PDF file to open"));
+	parser.addPositionalArgument (tr ("file.pdf"), tr ("PDF file to open"));
 	QCommandLineOption render_cache_size_option (
 	    QStringList () << "c"
 	                   << "cache",
 	    tr ("Render cache size (default = %1)").arg (size_in_bytes_to_string (render_cache_size)),
 	    tr ("size"));
 	parser.addOption (render_cache_size_option);
+	QCommandLineOption pdfpc_filename_option (QStringList () << "a"
+	                                                         << "annotations",
+	                                          tr ("Annotation file name (default = file.pdfpc)"),
+	                                          tr ("file"));
+	parser.addOption (pdfpc_filename_option);
 	parser.process (app);
 
 	auto arguments = parser.positionalArguments ();
@@ -90,6 +95,7 @@ int main (int argc, char * argv[]) {
 		parser.showHelp (EXIT_FAILURE);
 		Q_UNREACHABLE ();
 	}
+	QString filename = arguments[0];
 
 	if (parser.isSet (render_cache_size_option)) {
 		auto size_str = parser.value (render_cache_size_option);
@@ -103,7 +109,12 @@ int main (int argc, char * argv[]) {
 		}
 	}
 
-	auto document = Document::open (arguments[0]);
+	QString pdfpc_filename = filename + "pc";
+	if (parser.isSet (pdfpc_filename_option)) {
+		pdfpc_filename = parser.value (pdfpc_filename_option);
+	}
+
+	auto document = Document::open (filename, pdfpc_filename);
 	if (!document) {
 		return EXIT_FAILURE;
 	}

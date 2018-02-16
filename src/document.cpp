@@ -150,7 +150,8 @@ Document::Document (const QString & filename, std::unique_ptr<Poppler::Document>
     : filename_ (filename), document_ (std::move (document)) {}
 Document::~Document () = default;
 
-std::unique_ptr<const Document> Document::open (const QString & filename) {
+std::unique_ptr<const Document> Document::open (const QString & filename,
+                                                const QString & pdfpc_filename) {
 	auto tr = [](const char * str) { return qApp->translate ("Document::open", str); };
 
 	auto poppler_doc = std::unique_ptr<Poppler::Document> (Poppler::Document::load (filename));
@@ -176,7 +177,7 @@ std::unique_ptr<const Document> Document::open (const QString & filename) {
 		return nullptr;
 	}
 
-	document->read_annotations_from_file (filename + "pc"); // TODO config point
+	document->read_annotations_from_file (pdfpc_filename);
 
 	return std::move (document);
 }

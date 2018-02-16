@@ -148,7 +148,8 @@ private:
 
 public:
 	// Returns nullptr on error, and prints messages to stderr
-	static std::unique_ptr<const Document> open (const QString & filename);
+	static std::unique_ptr<const Document> open (const QString & filename,
+	                                             const QString & pdfpc_filename);
 
 	~Document ();
 
