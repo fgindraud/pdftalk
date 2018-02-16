@@ -18,7 +18,7 @@
 #include "action.h"
 #include "document.h"
 
-#include <QDebug>
+#include <QtDebug>
 #include <QShortcut>
 
 // Timer

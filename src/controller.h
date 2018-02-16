@@ -23,6 +23,7 @@ class Base;
 }
 
 #include <QBasicTimer>
+#include <QDebug>
 #include <QPixmap>
 #include <QTime>
 class QWidget;

@@ -19,11 +19,11 @@
 #include "render_internal.h"
 
 #include <QCoreApplication>
-#include <QDebug>
 #include <QHash>
 #include <QLocale>
 #include <QMetaType>
 #include <QThreadPool>
+#include <QtDebug>
 
 // Byte size conversion
 
@@ -150,9 +150,9 @@ void System::request_render (const Request & request) {
 }
 
 SystemPrivate::~SystemPrivate () {
-	qDebug ().noquote () << QString ("# Render cache: used %1 out of %2")
-	                            .arg (size_in_bytes_to_string (cache_.totalCost ()),
-	                                  size_in_bytes_to_string (cache_.maxCost ()));
+	qDebug () << QString ("Render cache: used %1 out of %2")
+	                .arg (size_in_bytes_to_string (cache_.totalCost ()),
+	                      size_in_bytes_to_string (cache_.maxCost ()));
 }
 
 void SystemPrivate::request_render (const Request & request) {
