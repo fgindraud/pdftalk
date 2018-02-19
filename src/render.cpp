@@ -98,7 +98,7 @@ uint qHash (const Info & info, uint seed) {
 
 QDebug operator<< (QDebug d, const Info & render_info) {
 	if (!render_info.isNull ()) {
-		d << *render_info.page () << render_info.size ();
+		d << render_info.page () << render_info.size ();
 	} else {
 		d << "Render::Info()";
 	}
@@ -151,8 +151,8 @@ void System::request_render (const Request & request) {
 
 SystemPrivate::~SystemPrivate () {
 	qDebug () << QString ("Render cache: used %1 out of %2")
-	                .arg (size_in_bytes_to_string (cache_.totalCost ()),
-	                      size_in_bytes_to_string (cache_.maxCost ()));
+	                 .arg (size_in_bytes_to_string (cache_.totalCost ()),
+	                       size_in_bytes_to_string (cache_.maxCost ()));
 }
 
 void SystemPrivate::request_render (const Request & request) {

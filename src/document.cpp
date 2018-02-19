@@ -27,6 +27,12 @@
 #include <cstdio>
 #include <poppler-qt5.h>
 
+template <typename T> void set_pointer_once (const T *& ptr, const T * value) {
+	Q_ASSERT (ptr == nullptr);
+	Q_ASSERT (value != nullptr);
+	ptr = value;
+}
+
 // PageInfo
 
 void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
@@ -92,7 +98,7 @@ void add_page_actions (std::vector<std::unique_ptr<Action::Base>> & actions,
 }
 
 PageInfo::PageInfo (std::unique_ptr<Poppler::Page> page, int index)
-    : poppler_page_ (std::move (page)), page_index_ (index) {
+    : poppler_page_ (std::move (page)), index_ (index) {
 	// precompute height_for_width_ratio
 	auto page_size_dots = poppler_page_->pageSizeF ();
 	if (!page_size_dots.isEmpty ())
@@ -136,13 +142,54 @@ const Action::Base * PageInfo::on_click (const QPointF & coord) const {
 	return nullptr;
 }
 
-QDebug operator<< (QDebug d, const PageInfo & page) {
-	QDebugStateSaver saver (d);
-	d.nospace () << "Page(p=" << page.page_index () << ", s=" << page.slide_index () << ")";
+void PageInfo::set_slide (const SlideInfo * slide) {
+	set_pointer_once (slide_, slide);
+}
+void PageInfo::set_next_page (const PageInfo * page) {
+	set_pointer_once (next_page_, page);
+}
+void PageInfo::set_previous_page (const PageInfo * page) {
+	set_pointer_once (previous_page_, page);
+}
+void PageInfo::set_next_transition_page (const PageInfo * page) {
+	next_transition_page_ = page;
+}
+void PageInfo::set_previous_transition_page (const PageInfo * page) {
+	previous_transition_page_ = page;
+}
+
+QDebug operator<< (QDebug d, const PageInfo * page) {
+	if (page != nullptr) {
+		QDebugStateSaver saver (d);
+		d.nospace () << "Page(p=" << page->index () << ", s=" << page->slide ()->index () << ")";
+	} else {
+		d << "Page()";
+	}
 	return d;
 }
 
 // SlideInfo
+
+SlideInfo::SlideInfo (int index) : index_ (index) {}
+
+void SlideInfo::append_annotation (const QString & text) {
+	annotations_ += text;
+	if (!text.endsWith ('\n'))
+		annotations_ += '\n';
+}
+
+void SlideInfo::set_first_page (const PageInfo * page) {
+	set_pointer_once (first_page_, page);
+}
+void SlideInfo::set_last_page (const PageInfo * page) {
+	set_pointer_once (last_page_, page);
+}
+void SlideInfo::set_next_slide (const SlideInfo * slide) {
+	set_pointer_once (next_slide_, slide);
+}
+void SlideInfo::set_previous_slide (const SlideInfo * slide) {
+	set_pointer_once (previous_slide_, slide);
+}
 
 // Document
 
@@ -185,13 +232,14 @@ std::unique_ptr<const Document> Document::open (const QString & filename,
 bool Document::discover_document_structure () {
 	auto tr = [](const char * str) { return qApp->translate ("discover_document_structure", str); };
 
-	// Create raw PageInfo structs
 	const auto nb_pages = static_cast<int> (document_->numPages ());
 	if (nb_pages <= 0) {
 		QTextStream (stderr)
 		    << tr ("Error: Poppler: no pages in the PDF document \"%1\"").arg (filename_);
 		return false;
 	}
+
+	// Create uninitialized PageInfo structs
 	pages_.reserve (nb_pages);
 	for (int i = 0; i < nb_pages; ++i) {
 		auto p = std::unique_ptr<Poppler::Page>{document_->page (i)};
@@ -204,38 +252,62 @@ bool Document::discover_document_structure () {
 		pages_.emplace_back (make_unique<PageInfo> (std::move (p), i));
 	}
 
-	// Parse all pages, and create SlideInfo structures each time we "change of slide"
-	QString current_slide_label = pages_[0]->label ();
-	slides_.emplace_back (make_unique<SlideInfo> (0));
-	for (int page_index = 0; page_index < nb_pages; ++page_index) {
-		auto & current = *pages_[page_index];
-		// Link to previous page if it exists
-		if (page_index > 0) {
-			auto & prev = *pages_[page_index - 1];
-			current.set_previous_page (&prev);
-			prev.set_next_page (&current);
-		}
-		// If label changed since last page, this is the first page of a new slide
-		auto label = current.label ();
-		if (label != current_slide_label) {
-			// Set "next first page of slide" links of previous pages
-			for (int index = slides_.back ()->first_page_index (); index < page_index; ++index)
-				pages_[index]->set_next_slide_first_page (&current);
-			// Append to slide list
-			slides_.emplace_back (make_unique<SlideInfo> (page_index));
-			current_slide_label = label;
-		}
-		// Update slide numbering
-		int current_slide_index = slides_.size () - 1;
-		current.set_slide_index (current_slide_index);
-		// Update transition links with previous page
-		if (page_index > 0) {
-			auto & prev = *pages_[page_index - 1];
-			if (prev.slide_index () == current_slide_index) {
-				prev.set_next_transition_page (&current);
-				current.set_previous_transition_page (&prev);
+	// Chain PageInfo structs (setup next/prev pointers)
+	for (int page_index = 1; page_index < nb_pages; ++page_index) {
+		auto * current = pages_[page_index].get ();
+		auto * prev = pages_[page_index - 1].get ();
+		current->set_previous_page (prev);
+		prev->set_next_page (current);
+	}
+
+	/* Determine the slide structure.
+	 * In presentations made from beamer, a "slide" is a sequence of pages sharing the same label.
+	 * This label appears to be the slide number from 1, as a string.
+	 *
+	 * Here, create a SlideInfo structure for each sequence of pages sharing the same label.
+	 * Set the slide field of PageInfo traversed.
+	 * Set the first / last page fields of SlideInfo structures.
+	 * Set the next / prev fields of SlideInfo structures.
+	 */
+	{
+		// Init, create initial slide, setup page 0
+		int current_slide_index = 0;
+		auto * first_page = pages_.front ().get ();
+		QString current_slide_label = first_page->label ();
+		std::unique_ptr<SlideInfo> current_slide = make_unique<SlideInfo> (current_slide_index);
+		current_slide->set_first_page (first_page);
+		first_page->set_slide (current_slide.get ());
+
+		for (int page_index = 1; page_index < nb_pages; ++page_index) {
+			auto * current_page = pages_[page_index].get ();
+
+			// If label changed since last page, this is the first page of a new slide
+			auto label = current_page->label ();
+			if (label != current_slide_label) {
+				// Finish the current slide
+				auto prev_slide = std::move (current_slide);
+				prev_slide->set_last_page (current_page->previous_page ());
+
+				// Create next slide
+				++current_slide_index;
+				current_slide = make_unique<SlideInfo> (current_slide_index);
+				current_slide->set_first_page (current_page);
+
+				// Link next/prev SlideInfo pointers, store prev slide
+				current_slide->set_previous_slide (prev_slide.get ());
+				prev_slide->set_next_slide (current_slide.get ());
+				slides_.emplace_back (std::move (prev_slide));
+
+				current_slide_label = label;
 			}
+
+			// Set slide pointer of current page
+			current_page->set_slide (current_slide.get ());
 		}
+
+		// Store last slide
+		current_slide->set_last_page (pages_.back ().get ());
+		slides_.emplace_back (std::move (current_slide));
 	}
 	return true;
 }

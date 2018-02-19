@@ -18,8 +18,8 @@
 #include "action.h"
 #include "document.h"
 
-#include <QtDebug>
 #include <QShortcut>
+#include <QtDebug>
 
 // Timer
 
@@ -85,8 +85,10 @@ const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role) {
 		return nullptr;
 
 	switch (role) {
-	case ViewRole::NextSlide:
-		return current_page->next_slide_first_page ();
+	case ViewRole::NextSlide: {
+		auto * next_slide = current_page->slide ()->next_slide ();
+		return next_slide ? next_slide->first_page () : nullptr;
+	}
 	case ViewRole::NextTransition:
 		return current_page->next_transition_page ();
 	case ViewRole::PrevTransition:
@@ -161,11 +163,11 @@ void Controller::navigation_change_page (int index, RedrawCause cause) {
 }
 
 void Controller::update_gui (RedrawCause cause) {
-	const auto & page = document_.page (current_page_);
-	emit current_page_changed (&page, cause);
-	emit slide_changed (page.slide_index ());
-	const auto & slide = document_.slide (page.slide_index ());
-	emit annotations_changed (slide.annotations ());
+	const auto * page = document_.page (current_page_);
+	const auto * slide = page->slide ();
+	emit current_page_changed (page, cause);
+	emit slide_changed (slide->index ());
+	emit annotations_changed (slide->annotations ());
 }
 
 // Shortcuts

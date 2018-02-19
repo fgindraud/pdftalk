@@ -23,6 +23,8 @@ namespace Poppler {
 class Document;
 class Page;
 } // namespace Poppler
+class PageInfo;
+class SlideInfo;
 
 #include <QDebug>
 #include <QString>
@@ -32,14 +34,20 @@ class Page;
 /* A presentation (in beamer at least) is a pdf document.
  * A pdf document is flat and composed of pages (vector images).
  * The presentation is however composed of slides, which can each contain one or more pages.
- * More than one page corresponds to internal transitions.
+ * More than one page per slide corresponds to internal transitions.
  * They should not be counted in the slide numbering.
  *
- * The PageInfo class is used to represent a pdf page.
- * It is used as a page descriptor structure, and always passed as a const pointer.
- * It stores page info (rendering, sizing, slide number).
- * It also stores links to related pages (next/prev transition, next slide).
- * These links are pointers which are nullptr if the related page doesn't exists.
+ * The presentation structure is represented by PageInfo and SlideInfo structures.
+ * These structs are created and owned by the Document class (represents the document).
+ * Both PageInfo and SlideInfo are referenced by const pointer (non owning).
+ * They contain navigation link to other PageInfo / SlideInfo.
+ * Some navigation links may not be defined (nullptr).
+ *
+ * PageInfo describes a pdf page.
+ * It can perform rendering, stores sizing information, label, and actions.
+ *
+ * SlideInfo describes a slide (sequence of pages).
+ * It stores slide-level annotations.
  *
  * The Document class represents a whole document.
  * It creates and owns PageInfo objects.
@@ -57,19 +65,18 @@ class Page;
  */
 class PageInfo {
 private:
-	// Page info
 	std::unique_ptr<Poppler::Page> poppler_page_;
-	int page_index_;                  // PDF document page index (from 0)
-	int slide_index_{-1};             // User slide index, counting from 0
 	qreal height_for_width_ratio_{0}; // Page aspect ratio, used by GUI
 	std::vector<std::unique_ptr<Action::Base>> actions_;
 
-	// Related page links (used for the presenter view)
+	// Navigation (always defined)
+	int index_;                        // PDF document page index (from 0)
+	const SlideInfo * slide_{nullptr}; // Pointer to SlideInfo for the slide containing the page
+	// Navigation (may be null)
 	const PageInfo * next_page_{nullptr};
 	const PageInfo * previous_page_{nullptr};
 	const PageInfo * next_transition_page_{nullptr};
 	const PageInfo * previous_transition_page_{nullptr};
-	const PageInfo * next_slide_first_page_{nullptr};
 
 public:
 	PageInfo (std::unique_ptr<Poppler::Page> page, int index);
@@ -80,54 +87,70 @@ public:
 	PageInfo & operator= (const PageInfo &) = delete;
 	PageInfo & operator= (PageInfo &&) = delete;
 
-	int page_index () const { return page_index_; }
-	int slide_index () const { return slide_index_; }
-	qreal height_for_width_ratio () const { return height_for_width_ratio_; }
-
-	const PageInfo * next_page () const { return next_page_; }
-	const PageInfo * previous_page () const { return previous_page_; }
-	const PageInfo * next_transition_page () const { return next_transition_page_; }
-	const PageInfo * previous_transition_page () const { return previous_transition_page_; }
-	const PageInfo * next_slide_first_page () const { return next_slide_first_page_; }
+	int index () const noexcept { return index_; }
+	const SlideInfo * slide () const noexcept { return slide_; }
+	const PageInfo * next_page () const noexcept { return next_page_; }
+	const PageInfo * previous_page () const noexcept { return previous_page_; }
+	const PageInfo * next_transition_page () const noexcept { return next_transition_page_; }
+	const PageInfo * previous_transition_page () const noexcept { return previous_transition_page_; }
 
 	QString label () const;
 
+	qreal height_for_width_ratio () const noexcept { return height_for_width_ratio_; }
 	QSize render_size (const QSize & box) const; // Which render size can fit in box
 	QImage render (const QSize & box) const;     // Make render in box
 
 	// Which action is triggered by a click at relative [0,1]x[0,1] coords ?
 	const Action::Base * on_click (const QPointF & coord) const;
 
-	// Related page links editions by document
-	void set_slide_index (int index) { slide_index_ = index; }
-	void set_next_page (const PageInfo * page) { next_page_ = page; }
-	void set_previous_page (const PageInfo * page) { previous_page_ = page; }
-	void set_next_transition_page (const PageInfo * page) { next_transition_page_ = page; }
-	void set_previous_transition_page (const PageInfo * page) { previous_transition_page_ = page; }
-	void set_next_slide_first_page (const PageInfo * page) { next_slide_first_page_ = page; }
+	// Navigation link setup by document
+	void set_slide (const SlideInfo * slide);
+	void set_next_page (const PageInfo * page);
+	void set_previous_page (const PageInfo * page);
+	// FIXME remove
+	void set_next_transition_page (const PageInfo * page);
+	void set_previous_transition_page (const PageInfo * page);
 };
 
-QDebug operator<< (QDebug d, const PageInfo & page);
+QDebug operator<< (QDebug d, const PageInfo * page);
 
 /* Represent information for a slide.
  * Only annotations and first page.
  */
 class SlideInfo {
 private:
-	int first_page_index_;
+	// Navigation (always defined)
+	int index_; // User slide index, counting from 0
+	const PageInfo * first_page_{nullptr};
+	const PageInfo * last_page_{nullptr};
+	// Navigation (may be null)
+	const SlideInfo * next_slide_{nullptr};
+	const SlideInfo * previous_slide_{nullptr};
+
 	QString annotations_; // Annotations from pdfpc
 
 public:
-	explicit SlideInfo (int first_page_index) : first_page_index_ (first_page_index) {}
+	explicit SlideInfo (int index);
 
-	int first_page_index () const { return first_page_index_; }
+	// Non copiable / movable, to safely take references on them
+	SlideInfo (const SlideInfo &) = delete;
+	SlideInfo (SlideInfo &&) = delete;
+	SlideInfo & operator= (const SlideInfo &) = delete;
+	SlideInfo & operator= (SlideInfo &&) = delete;
+
+	int index () const { return index_; }
+	const PageInfo * first_page () const { return first_page_; }
+	const PageInfo * last_page () const { return last_page_; }
+	const SlideInfo * next_slide () const { return next_slide_; }
+	const SlideInfo * previous_slide () const { return previous_slide_; }
 	const QString & annotations () const { return annotations_; }
 
-	void append_annotation (const QString & text) {
-		annotations_ += text;
-		if (!text.endsWith ('\n'))
-			annotations_ += '\n';
-	}
+	// Setup by document
+	void append_annotation (const QString & text);
+	void set_first_page (const PageInfo * page);
+	void set_last_page (const PageInfo * page);
+	void set_next_slide (const SlideInfo * slide);
+	void set_previous_slide (const SlideInfo * slide);
 };
 
 /* Represents an opened pdf document.
@@ -154,10 +177,10 @@ public:
 	~Document ();
 
 	int nb_pages () const { return pages_.size (); }
-	const PageInfo & page (int page_index) const { return *pages_.at (page_index); }
+	const PageInfo * page (int page_index) const { return pages_.at (page_index).get (); }
 
 	int nb_slides () const { return slides_.size (); }
-	const SlideInfo & slide (int slide_index) const { return *slides_.at (slide_index); }
+	const SlideInfo * slide (int slide_index) const { return slides_.at (slide_index).get (); }
 
 private:
 	explicit Document (const QString & filename, std::unique_ptr<Poppler::Document> document);
