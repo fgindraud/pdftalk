@@ -103,9 +103,7 @@ public:
 
 signals:
 	void current_page_changed (const PageInfo * new_current_page, RedrawCause cause);
-	void slide_changed (int new_slide_number);
 	void time_changed (bool paused, QString new_time_text);
-	void annotations_changed (QString new_annotations);
 
 public slots:
 	// Page navigation (no effect if out of bounds)
@@ -127,9 +125,7 @@ public slots:
 	void reset ();
 
 private:
-	// Impl detail
 	void navigation_change_page (int new_page_index, RedrawCause cause);
-	void update_gui (RedrawCause cause);
 };
 
 // Sets keyboard shortcuts for the controller in a QWidget.

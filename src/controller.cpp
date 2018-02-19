@@ -159,25 +159,18 @@ void Controller::reset () {
 	// Does not start timer !
 	current_page_ = 0;
 	qDebug () << "### reset ###";
-	update_gui (RedrawCause::RandomMove);
+	emit current_page_changed (document_.page (current_page_), RedrawCause::RandomMove);
 	timer_reset ();
 }
 
 void Controller::navigation_change_page (int index, RedrawCause cause) {
 	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
 		current_page_ = index;
-		qDebug () << "# current  " << document_.page (current_page_);
-		update_gui (cause);
+		auto * page = document_.page (current_page_);
+		qDebug () << "# current  " << page;
+		emit current_page_changed (page, cause);
 		timer_start ();
 	}
-}
-
-void Controller::update_gui (RedrawCause cause) {
-	const auto * page = document_.page (current_page_);
-	const auto * slide = page->slide ();
-	emit current_page_changed (page, cause);
-	emit slide_changed (slide->index ());
-	emit annotations_changed (slide->annotations ());
 }
 
 // Shortcuts

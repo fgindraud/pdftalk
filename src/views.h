@@ -107,8 +107,6 @@ public:
 	PageViewer * previous_transition_page_viewer () const { return previous_transition_page_; }
 
 public slots:
-
-	void change_slide (int new_slide_number);
 	void change_time (bool paused, const QString & new_time_text);
-	void change_annotations (QString new_annotations);
+	void change_slide_info (const PageInfo * new_current_page);
 };

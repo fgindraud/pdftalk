@@ -129,12 +129,10 @@ int main (int argc, char * argv[]) {
 	add_shortcuts_to_widget (control, presenter_view);
 
 	// Link non slide widgets to controller.
-	QObject::connect (&control, &Controller::slide_changed, presenter_view,
-	                  &PresenterView::change_slide);
+	QObject::connect (&control, &Controller::current_page_changed, presenter_view,
+	                  &PresenterView::change_slide_info);
 	QObject::connect (&control, &Controller::time_changed, presenter_view,
 	                  &PresenterView::change_time);
-	QObject::connect (&control, &Controller::annotations_changed, presenter_view,
-	                  &PresenterView::change_annotations);
 
 	// Link slide viewers to controller, actions, caching system
 	auto viewers =
