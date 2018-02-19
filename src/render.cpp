@@ -90,6 +90,9 @@ Info::Info (const PageInfo * p, const QSize & box) : page_ (p) {
 bool operator== (const Info & a, const Info & b) {
 	return a.page () == b.page () && a.size () == b.size ();
 }
+bool operator!= (const Info & a, const Info & b) {
+	return !(a == b);
+}
 uint qHash (const Info & info, uint seed) {
 	using ::qHash; // Have access to Qt's basic qHash
 	return qHash (info.page (), seed) ^ qHash (info.size ().width (), seed) ^
@@ -107,10 +110,16 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 
 // Render Request
 
-Request::Request (const Info & info, const QSize & box, ViewRole role, RedrawCause cause)
-    : Info (info), box_size_ (box), role_ (role), cause_ (cause) {
-	Q_ASSERT (!info.isNull ());
-	Q_ASSERT (info.size () == info.page ()->render_size (box));
+Request::Request (const Info & requested_render, const PageInfo * current_page, const QSize & box,
+                  ViewRole role, RedrawCause cause)
+    : requested_render_ (requested_render),
+      current_page_ (current_page),
+      box_size_ (box),
+      role_ (role),
+      cause_ (cause) {
+	Q_ASSERT (!requested_render.isNull ());
+	Q_ASSERT (requested_render.size () == requested_render.page ()->render_size (box));
+	Q_ASSERT (current_page != nullptr);
 	Q_ASSERT (role != ViewRole::Unknown);
 	Q_ASSERT (cause != RedrawCause::Unknown);
 }
@@ -156,17 +165,18 @@ SystemPrivate::~SystemPrivate () {
 }
 
 void SystemPrivate::request_render (const Request & request) {
-	qDebug () << "request    " << request << request.role () << request.cause ();
+	qDebug () << "request    " << request.requested_render () << request.role () << request.cause ();
 
 	// Handle request
-	const Compressed * compressed_render = cache_.object (request);
+	const Compressed * compressed_render = cache_.object (request.requested_render ());
 	if (compressed_render != nullptr) {
 		// Serve request from cache
-		qDebug () << "-> cached  " << request;
-		emit parent_->new_render (request, make_pixmap_from_compressed_render (*compressed_render));
+		qDebug () << "-> cached  " << request.requested_render ();
+		emit parent_->new_render (request.requested_render (),
+		                          make_pixmap_from_compressed_render (*compressed_render));
 	} else {
 		// Make new render (spawn a Task in a QThreadPool)
-		launch_render (request);
+		launch_render (request.requested_render ());
 	}
 	/* Prefetch pages around the request.
 	 * We only need to launch renders, no need to give an answer as there is no request.

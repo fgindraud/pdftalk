@@ -55,6 +55,7 @@ public:
 	bool isNull () const noexcept { return page () == nullptr || size ().isNull (); }
 };
 bool operator== (const Info & a, const Info & b);
+bool operator!= (const Info & a, const Info & b);
 uint qHash (const Info & info, uint seed = 0);
 QDebug operator<< (QDebug d, const Info & render_info);
 
@@ -63,18 +64,25 @@ QDebug operator<< (QDebug d, const Info & render_info);
  * A request must have a valid render info.
  *
  * The request will contain the actual render info (Info).
- * Additional informations for prefetching: box size, render role & cause.
+ * Additional informations for prefetching: current_page, box size, render role & cause.
  */
-class Request : public Info {
+class Request {
 private:
+	Info requested_render_{};
+
+	// Info used for prefetching
+	const PageInfo * current_page_{nullptr};
 	QSize box_size_{};
 	ViewRole role_{ViewRole::Unknown};
 	RedrawCause cause_{RedrawCause::Unknown};
 
 public:
 	Request () = default; // Required by Qt Moc, should not be used otherwise
-	Request (const Info & info, const QSize & box, ViewRole role, RedrawCause cause);
+	Request (const Info & requested_render, const PageInfo * current_page, const QSize & box,
+	         ViewRole role, RedrawCause cause);
 
+	const Info & requested_render () const noexcept { return requested_render_; }
+	const PageInfo * current_page () const noexcept { return current_page_; }
 	const QSize & box_size () const noexcept { return box_size_; }
 	ViewRole role () const noexcept { return role_; }
 	RedrawCause cause () const noexcept { return cause_; }

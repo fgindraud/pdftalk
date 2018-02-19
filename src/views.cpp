@@ -37,10 +37,10 @@ PageViewer::PageViewer (const ViewRole & role, QWidget * parent) : QLabel (paren
 }
 
 int PageViewer::heightForWidth (int w) const {
-	if (render_.isNull ()) {
+	if (current_render_.isNull ()) {
 		return QLabel::heightForWidth (w);
 	} else {
-		return render_.page ()->height_for_width_ratio () * w;
+		return current_render_.page ()->height_for_width_ratio () * w;
 	}
 }
 QSize PageViewer::sizeHint () const {
@@ -48,13 +48,13 @@ QSize PageViewer::sizeHint () const {
 }
 
 void PageViewer::resizeEvent (QResizeEvent *) {
-	update_label (render_.page (), RedrawCause::Resize);
+	update_label (RedrawCause::Resize);
 }
 void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
-	if (event->button () == Qt::LeftButton && !size ().isEmpty () && !render_.isNull ()) {
+	if (event->button () == Qt::LeftButton && !size ().isEmpty () && !current_render_.isNull ()) {
 		// Determine pixmap position (centered)
 		auto label_size = size ();
-		auto pixmap_size = render_.size ();
+		auto pixmap_size = current_render_.size ();
 		auto pixmap_offset_in_label = (label_size - pixmap_size) / 2;
 		// Click position in pixmap
 		auto click_pos_01 =
@@ -62,35 +62,37 @@ void PageViewer::mouseReleaseEvent (QMouseEvent * event) {
 		                 static_cast<qreal> (pixmap_size.width ()),
 		             static_cast<qreal> (event->y () - pixmap_offset_in_label.height ()) /
 		                 static_cast<qreal> (pixmap_size.height ()));
-		auto * action = render_.page ()->on_click (click_pos_01);
+		auto * action = current_render_.page ()->on_click (click_pos_01);
 		if (action != nullptr)
 			emit action_activated (action);
 	}
 }
 
 void PageViewer::change_current_page (const PageInfo * new_current_page, RedrawCause cause) {
-	const PageInfo * new_shown_page = page_for_role (new_current_page, role_);
-	if (new_shown_page != render_.page ()) {
-		update_label (new_shown_page, cause);
-	}
+	current_page_ = new_current_page;
+	update_label (cause);
 }
 void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixmap) {
 	// Filter to only use the requested pixmaps
-	if (requested_a_pixmap_ && render_info == render_) {
+	if (requested_a_pixmap_ && render_info == current_render_) {
 		requested_a_pixmap_ = false;
 		setPixmap (pixmap);
 	}
 }
 
-void PageViewer::update_label (const PageInfo * new_shown_page, RedrawCause cause) {
-	render_ = Render::Info{new_shown_page, size ()};
+void PageViewer::update_label (RedrawCause cause) {
+	auto new_render = Render::Info{page_for_role (current_page_, role_), size ()};
+	if (new_render != current_render_) {
+		current_render_ = new_render;
 
-	static constexpr int pixmap_size_limit_px = 10;
-	clear (); // Remove old pixmap
-	// Ask for a new pixmap only if useful
-	if (!render_.isNull () && width () >= pixmap_size_limit_px && height () >= pixmap_size_limit_px) {
-		requested_a_pixmap_ = true;
-		emit request_render (Render::Request{render_, size (), role_, cause});
+		static constexpr int pixmap_size_limit_px = 10;
+		clear (); // Remove old pixmap
+		// Ask for a new pixmap only if useful
+		if (!current_render_.isNull () && width () >= pixmap_size_limit_px &&
+		    height () >= pixmap_size_limit_px) {
+			requested_a_pixmap_ = true;
+			emit request_render (Render::Request{current_render_, current_page_, size (), role_, cause});
+		}
 	}
 }
 

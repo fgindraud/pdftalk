@@ -45,9 +45,10 @@ class PageViewer : public QLabel {
 	Q_OBJECT
 
 private:
-	Render::Info render_{};
-	ViewRole role_;
-	bool requested_a_pixmap_{false};
+	ViewRole role_;                          // Selected role of this viewer
+	const PageInfo * current_page_{nullptr}; // Current page of presentation
+	Render::Info current_render_{};          // Current rendered page (requested or shown).
+	bool requested_a_pixmap_{false};         // Did we request a render ?
 
 public:
 	explicit PageViewer (const ViewRole & role, QWidget * parent = nullptr);
@@ -68,7 +69,7 @@ public slots:
 	void receive_pixmap (const Render::Info & render_info, QPixmap pixmap);
 
 private:
-	void update_label (const PageInfo * new_shown_page, RedrawCause cause);
+	void update_label (RedrawCause cause);
 };
 
 // Just one PageViewer, but also set a black background.
