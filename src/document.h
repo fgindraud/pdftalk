@@ -50,9 +50,9 @@ class SlideInfo;
  * It stores slide-level annotations.
  *
  * The Document class represents a whole document.
- * It creates and owns PageInfo objects.
- * It also stores Slide specific info.
+ * It creates and owns PageInfo / SlideInfo objects.
  * Slide and Page numbering counts from 0.
+ * A document must contain at least one page.
  *
  * Annotations follow the pdfpc model:
  * - must be stored in a text file, pdfpc format
@@ -72,11 +72,9 @@ private:
 	// Navigation (always defined)
 	int index_;                        // PDF document page index (from 0)
 	const SlideInfo * slide_{nullptr}; // Pointer to SlideInfo for the slide containing the page
-	// Navigation (may be null)
+	// Navigation (null at start/end)
 	const PageInfo * next_page_{nullptr};
 	const PageInfo * previous_page_{nullptr};
-	const PageInfo * next_transition_page_{nullptr};
-	const PageInfo * previous_transition_page_{nullptr};
 
 public:
 	PageInfo (std::unique_ptr<Poppler::Page> page, int index);
@@ -91,8 +89,6 @@ public:
 	const SlideInfo * slide () const noexcept { return slide_; }
 	const PageInfo * next_page () const noexcept { return next_page_; }
 	const PageInfo * previous_page () const noexcept { return previous_page_; }
-	const PageInfo * next_transition_page () const noexcept { return next_transition_page_; }
-	const PageInfo * previous_transition_page () const noexcept { return previous_transition_page_; }
 
 	QString label () const;
 
@@ -107,23 +103,17 @@ public:
 	void set_slide (const SlideInfo * slide);
 	void set_next_page (const PageInfo * page);
 	void set_previous_page (const PageInfo * page);
-	// FIXME remove
-	void set_next_transition_page (const PageInfo * page);
-	void set_previous_transition_page (const PageInfo * page);
 };
 
 QDebug operator<< (QDebug d, const PageInfo * page);
 
-/* Represent information for a slide.
- * Only annotations and first page.
- */
 class SlideInfo {
 private:
 	// Navigation (always defined)
 	int index_; // User slide index, counting from 0
 	const PageInfo * first_page_{nullptr};
 	const PageInfo * last_page_{nullptr};
-	// Navigation (may be null)
+	// Navigation (null at start/end)
 	const SlideInfo * next_slide_{nullptr};
 	const SlideInfo * previous_slide_{nullptr};
 
@@ -153,15 +143,6 @@ public:
 	void set_previous_slide (const SlideInfo * slide);
 };
 
-/* Represents an opened pdf document.
- * The document is represented as a list of PageInfo objects which represents the document pages.
- * All PageInfo objects are owned by the Document object.
- * A Document must contains at least one page.
- *
- * Additionnaly it stores info for each slide (group of pages):
- * - first page, to allow seeking in the presentation.
- * - pdfpc annotations, which are per slide.
- */
 class Document {
 private:
 	QString filename_;
@@ -189,5 +170,3 @@ private:
 	bool discover_document_structure ();
 	bool read_annotations_from_file (const QString & pdfpc_filename);
 };
-
-// Open the pdf document, returns nullptr on error (and print to stderr)

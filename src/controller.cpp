@@ -87,12 +87,22 @@ const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role) {
 	switch (role) {
 	case ViewRole::NextSlide: {
 		auto * next_slide = current_page->slide ()->next_slide ();
-		return next_slide ? next_slide->first_page () : nullptr;
+		return next_slide != nullptr ? next_slide->first_page () : nullptr;
 	}
-	case ViewRole::NextTransition:
-		return current_page->next_transition_page ();
-	case ViewRole::PrevTransition:
-		return current_page->previous_transition_page ();
+	case ViewRole::NextTransition: {
+		if (current_page == current_page->slide ()->last_page ()) {
+			return nullptr;
+		} else {
+			return current_page->next_page ();
+		}
+	}
+	case ViewRole::PrevTransition: {
+		if (current_page == current_page->slide ()->first_page ()) {
+			return nullptr;
+		} else {
+			return current_page->previous_page ();
+		}
+	}
 	default:
 		return current_page;
 	}

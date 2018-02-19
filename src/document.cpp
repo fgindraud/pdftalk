@@ -151,12 +151,6 @@ void PageInfo::set_next_page (const PageInfo * page) {
 void PageInfo::set_previous_page (const PageInfo * page) {
 	set_pointer_once (previous_page_, page);
 }
-void PageInfo::set_next_transition_page (const PageInfo * page) {
-	next_transition_page_ = page;
-}
-void PageInfo::set_previous_transition_page (const PageInfo * page) {
-	previous_transition_page_ = page;
-}
 
 QDebug operator<< (QDebug d, const PageInfo * page) {
 	if (page != nullptr) {
