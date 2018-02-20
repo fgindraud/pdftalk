@@ -110,16 +110,9 @@ QDebug operator<< (QDebug d, const Info & render_info) {
 
 // Render Request
 
-Request::Request (const Info & requested_render, const PageInfo * current_page, const QSize & box,
-                  ViewRole role, RedrawCause cause)
-    : requested_render_ (requested_render),
-      current_page_ (current_page),
-      box_size_ (box),
-      role_ (role),
-      cause_ (cause) {
-	Q_ASSERT (!requested_render.isNull ());
-	Q_ASSERT (requested_render.size () == requested_render.page ()->render_size (box));
-	Q_ASSERT (current_page != nullptr);
+Request::Request (const PageInfo * current_page, const QSize & box, ViewRole role,
+                  RedrawCause cause)
+    : current_page_ (current_page), box_size_ (box), role_ (role), cause_ (cause) {
 	Q_ASSERT (role != ViewRole::Unknown);
 	Q_ASSERT (cause != RedrawCause::Unknown);
 }
@@ -167,9 +160,9 @@ SystemPrivate::SystemPrivate (int cache_size_bytes, PrefetchStrategy * strategy,
       parent_ (parent),
       cache_ (cache_size_bytes),
       prefetch_strategy_ (strategy),
-      prefetch_render_lambda_ ([this](const Info & render) {
-	      qDebug () << "-> prefetch" << render;
-	      this->prefetch_render (render);
+      prefetch_render_lambda_ ([this](const Info & render_info) {
+	      qDebug () << "prefetch   " << render_info;
+	      this->perform_render (render_info, RenderType::Prefetch);
       }) {}
 
 SystemPrivate::~SystemPrivate () {
@@ -179,43 +172,62 @@ SystemPrivate::~SystemPrivate () {
 }
 
 void SystemPrivate::request_render (const Request & request) {
-	qDebug () << "request    " << request.requested_render () << request.role () << request.cause ();
-
-	// Handle request
-	const Compressed * compressed_render = cache_.object (request.requested_render ());
-	if (compressed_render != nullptr) {
-		// Serve request from cache
-		qDebug () << "-> cached  " << request.requested_render ();
-		emit parent_->new_render (request.requested_render (),
-		                          make_pixmap_from_compressed_render (*compressed_render));
-	} else {
-		// Make new render (spawn a Task in a QThreadPool)
-		qDebug () << "-> render  " << request.requested_render ();
-		launch_render (request.requested_render ());
-	}
-
+	auto current_render = request.requested_render ();
+	qDebug () << "request    " << current_render << request.role () << request.cause ();
+	perform_render (current_render, RenderType::Requested);
 	if (prefetch_strategy_ != nullptr) {
 		prefetch_strategy_->prefetch (request, prefetch_render_lambda_);
 	}
 }
 
 void SystemPrivate::rendering_finished (Info render_info, Compressed * compressed, QPixmap pixmap) {
-	// When rendering has finished: store compressed, untrack, give pixmap
+	// When rendering has finished: store compressed, untrack, give pixmap only if the render was
+	// requested.
 	cache_.insert (render_info, compressed, compressed->data.size ());
-	being_rendered_.remove (render_info);
-	emit parent_->new_render (render_info, pixmap);
+	Q_ASSERT (being_rendered_.contains (render_info));
+	auto type = being_rendered_.take (render_info);
+	if (type == RenderType::Requested) {
+		emit parent_->new_render (render_info, pixmap);
+	}
 }
 
-void SystemPrivate::prefetch_render (const Info & render_info) {
-	//FIXME
-}
-void SystemPrivate::launch_render (const Info & render_info) {
-	// If not tracked: track, schedule render
-	if (!being_rendered_.contains (render_info)) {
-		being_rendered_.insert (render_info);
-		auto * task = new Task (render_info);
-		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
-		QThreadPool::globalInstance ()->start (task);
+void SystemPrivate::perform_render (const Info & render_info, RenderType type) {
+	// Ignore bad renders (null, too small).
+	static constexpr int pixmap_size_limit_px = 10;
+	if (render_info.isNull () || render_info.size ().width () < pixmap_size_limit_px ||
+	    render_info.size ().height () < pixmap_size_limit_px) {
+		qDebug () << "-> ignored " << render_info;
+		return;
 	}
+
+	// Take the render from the cache is present.
+	const Compressed * compressed_render = cache_.object (render_info);
+	if (compressed_render != nullptr) {
+		qDebug () << "-> cached  " << render_info;
+		// Only serve if actually requested
+		if (type == RenderType::Requested) {
+			emit parent_->new_render (render_info,
+			                          make_pixmap_from_compressed_render (*compressed_render));
+		}
+		return;
+	}
+
+	// If a similar render is running, do nothing: it will answer the request for us.
+	auto it = being_rendered_.find (render_info);
+	if (it != being_rendered_.end ()) {
+		qDebug () << "-> running " << render_info;
+		// Mark the render as requested now, if it was only a prefetch render.
+		if (type == RenderType::Requested) {
+			it.value () = RenderType::Requested;
+		}
+		return;
+	}
+
+	// No render running, launch our own
+	qDebug () << "-> launch  " << render_info;
+	being_rendered_.insert (render_info, type);
+	auto * task = new Task (render_info);
+	connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);
+	QThreadPool::globalInstance ()->start (task);
 }
 } // namespace Render

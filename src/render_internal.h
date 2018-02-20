@@ -20,10 +20,10 @@
 
 #include <QByteArray>
 #include <QCache>
+#include <QHash>
 #include <QImage>
 #include <QPixmap>
 #include <QRunnable>
-#include <QSet>
 #include <utility>
 
 /* Internal header of the rendering system.
@@ -94,7 +94,15 @@ public:
  * Stores compressed renders in a cache to avoid rerendering stuff later.
  * Rendering is done through Tasks in a QThreadPool.
  *
- * being_rendered tracks ongoing renders, preventing double rendering.
+ * Render requests arrive at request_render slot.
+ * They are either served from the cache, or a render is launched.
+ * In any case, prefetch renders are launched.
+ *
+ * Ongoing renders (render tasks) can be requested or prefetch.
+ * Requested renders will emit a signal, as views requested them.
+ * Prefetch renders emit no signal, and only update the cache.
+ * If a render is requested while it is running, its status is updated to requested.
+ * being_rendered tracks running renders, preventing double rendering and keeping their status.
  */
 class SystemPrivate : public QObject {
 	Q_OBJECT
@@ -102,7 +110,9 @@ class SystemPrivate : public QObject {
 private:
 	System * parent_;
 	QCache<Info, Compressed> cache_;
-	QSet<Info> being_rendered_;
+
+	enum class RenderType { Requested, Prefetch };
+	QHash<Info, RenderType> being_rendered_;
 
 	PrefetchStrategy * prefetch_strategy_;
 	std::function<void(const Info &)> prefetch_render_lambda_; // for PrefetchStrategy, cached
@@ -118,8 +128,7 @@ private slots:
 	void rendering_finished (Render::Info render_info, Compressed * compressed, QPixmap pixmap);
 
 private:
-	void prefetch_render (const Info & render_info);
-	void launch_render (const Info & render_info);
+	void perform_render (const Info & render_info, RenderType type);
 };
 
 /* Prefetch strategy interface.
@@ -137,6 +146,6 @@ public:
 	virtual ~PrefetchStrategy () = default;
 	const QString & name () const noexcept { return name_; }
 	virtual void prefetch (const Request & context,
-	                       const std::function<void(const Info &)> & pre_render) = 0;
+	                       const std::function<void(const Info &)> & request_render) = 0;
 };
 } // namespace Render

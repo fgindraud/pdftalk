@@ -64,16 +64,9 @@ QDebug operator<< (QDebug d, const Info & render_info);
 
 /* Represent a render request comming from one of the views.
  * A view will request a render of a specific page, to fit within the view space.
- * A request must have a valid render info.
- *
- * The request will contain the actual render info (Info).
- * Additional informations for prefetching: current_page, box size, render role & cause.
  */
 class Request {
 private:
-	Info requested_render_{};
-
-	// Info used for prefetching
 	const PageInfo * current_page_{nullptr};
 	QSize box_size_{};
 	ViewRole role_{ViewRole::Unknown};
@@ -81,10 +74,9 @@ private:
 
 public:
 	Request () = default; // Required by Qt Moc, should not be used otherwise
-	Request (const Info & requested_render, const PageInfo * current_page, const QSize & box,
-	         ViewRole role, RedrawCause cause);
+	Request (const PageInfo * current_page, const QSize & box, ViewRole role, RedrawCause cause);
 
-	const Info & requested_render () const noexcept { return requested_render_; }
+	Info requested_render () const { return {page_for_role (current_page_, role_), box_size_}; }
 	const PageInfo * current_page () const noexcept { return current_page_; }
 	const QSize & box_size () const noexcept { return box_size_; }
 	ViewRole role () const noexcept { return role_; }

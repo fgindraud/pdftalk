@@ -34,7 +34,9 @@ class Base;
  * This struct indicates which page is shown, and at which rendered size.
  *
  * Changes of current presentation page by the controller will trigger change_current_page ().
- * The new shown page is determined from the current page and the view role, then rendered.
+ * A request for a render is then sent to the rendering system.
+ * The rendering system may never answer (size too small, etc).
+ * The viewer will not display anything until the current page is changed.
  *
  * Requests for Pixmaps will go through the Rendering system.
  * The rendering system will broadcast request answers: receive_pixmap must filter incoming pixmaps.

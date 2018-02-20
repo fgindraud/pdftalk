@@ -22,7 +22,7 @@ namespace Render {
 // Tools
 namespace {
 	void prefetch_next_n (const Request & context,
-	                      const std::function<void(const Info &)> & launch_render, int n) {
+	                      const std::function<void(const Info &)> & request_render, int n) {
 		auto * current_page = context.current_page ();
 		do {
 			--n;
@@ -30,12 +30,12 @@ namespace {
 
 			auto * render_page = page_for_role (current_page, context.role ());
 			if (render_page != nullptr) {
-				launch_render (Info{render_page, context.box_size ()});
+				request_render (Info{render_page, context.box_size ()});
 			}
 		} while (n > 0 && current_page != nullptr);
 	}
 	void prefetch_previous_n (const Request & context,
-	                          const std::function<void(const Info &)> & launch_render, int n) {
+	                          const std::function<void(const Info &)> & request_render, int n) {
 		auto * current_page = context.current_page ();
 		do {
 			--n;
@@ -43,7 +43,7 @@ namespace {
 
 			auto * render_page = page_for_role (current_page, context.role ());
 			if (render_page != nullptr) {
-				launch_render (Info{render_page, context.box_size ()});
+				request_render (Info{render_page, context.box_size ()});
 			}
 		} while (n > 0 && current_page != nullptr);
 	}
@@ -65,19 +65,19 @@ public:
 	DefaultStrategy () : PrefetchStrategy ("default") {}
 
 	void prefetch (const Request & context,
-	               const std::function<void(const Info &)> & launch_render) final {
+	               const std::function<void(const Info &)> & request_render) final {
 		bool has_directional_long_prefetch =
 		    context.role () == ViewRole::CurrentPublic || context.role () == ViewRole::CurrentPresenter;
 
 		if (has_directional_long_prefetch && context.cause () == RedrawCause::ForwardMove) {
-			prefetch_next_n (context, launch_render, 5);
-			prefetch_previous_n (context, launch_render, 1);
+			prefetch_next_n (context, request_render, 5);
+			prefetch_previous_n (context, request_render, 1);
 		} else if (has_directional_long_prefetch && context.cause () == RedrawCause::BackwardMove) {
-			prefetch_next_n (context, launch_render, 1);
-			prefetch_previous_n (context, launch_render, 5);
+			prefetch_next_n (context, request_render, 1);
+			prefetch_previous_n (context, request_render, 5);
 		} else {
-			prefetch_next_n (context, launch_render, 1);
-			prefetch_previous_n (context, launch_render, 1);
+			prefetch_next_n (context, request_render, 1);
+			prefetch_previous_n (context, request_render, 1);
 		}
 	}
 };

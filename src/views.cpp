@@ -81,17 +81,14 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 }
 
 void PageViewer::update_label (RedrawCause cause) {
-	auto new_render = Render::Info{page_for_role (current_page_, role_), size ()};
+	auto request = Render::Request{current_page_, size (), role_, cause};
+	auto new_render = request.requested_render();
 	if (new_render != current_render_) {
 		current_render_ = new_render;
-
-		static constexpr int pixmap_size_limit_px = 10;
 		clear (); // Remove old pixmap
-		// Ask for a new pixmap only if useful
-		if (!current_render_.isNull () && width () >= pixmap_size_limit_px &&
-		    height () >= pixmap_size_limit_px) {
+		if (!current_render_.isNull ()) {
 			requested_a_pixmap_ = true;
-			emit request_render (Render::Request{current_render_, current_page_, size (), role_, cause});
+			emit request_render (request);
 		}
 	}
 }
