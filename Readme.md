@@ -22,7 +22,7 @@ Details about dependencies can be found in the `build/*/requirement.sh` files.
 Usage
 -----
 
-Starting the presentation tool is simple (no options for now):
+Starting the presentation tool is simple:
 ```
 pdftalk <pdf_document>
 ```
@@ -39,24 +39,17 @@ The text file can easily be generated using the [pdfpc-latex-notes](https://gith
 Status
 ------
 
-Beta stage: working, lacking features and maturity
+Beta: functional, lacking some small functionnality.
 
 Todo:
-* PDF rendering
-	* Done: threadpool rendering, prefetching the next pages on render
-	* Improved prefetch
-		* better pattern: currently, just prerender the next few pages
-		* add role information to render system
-		* add weights to roles (public screen = highest)
-		* settings for cache size
-		* backwards prefetching
-* Go to page/slide n functionnality
+* Go to page/slide n
 
 Maybe Todo:
 * Auto spread windows on monitors
 * Disable screensaver
+* Presentation slide overview mode ?
 
-Unlikely Todo:
+Will not bother doing:
 * Support for durations (no animations for now)
 * Support for Poppler Rotation flags (don't know when it matters)
 * Movies
