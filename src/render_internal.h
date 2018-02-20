@@ -105,7 +105,7 @@ private:
 	QSet<Info> being_rendered_;
 
 	PrefetchStrategy * prefetch_strategy_;
-	std::function<void(const Info &)> prefetch_launch_render_lambda_; // for PrefetchStrategy, cached
+	std::function<void(const Info &)> prefetch_render_lambda_; // for PrefetchStrategy, cached
 
 public:
 	SystemPrivate (int cache_size_bytes, PrefetchStrategy * strategy, System * parent);
@@ -118,13 +118,15 @@ private slots:
 	void rendering_finished (Render::Info render_info, Compressed * compressed, QPixmap pixmap);
 
 private:
+	void prefetch_render (const Info & render_info);
 	void launch_render (const Info & render_info);
 };
 
 /* Prefetch strategy interface.
  * Has a name for commandline identification.
  * Strategies must implement the prefetch method.
- * The context determines which pages will be pre rendered using launch_render.
+ * The context determines which pages will be pre rendered using pre_render.
+ * pre_render should do nothing if the render is cached.
  */
 class PrefetchStrategy {
 private:
@@ -135,6 +137,6 @@ public:
 	virtual ~PrefetchStrategy () = default;
 	const QString & name () const noexcept { return name_; }
 	virtual void prefetch (const Request & context,
-	                       const std::function<void(const Info &)> & launch_render) = 0;
+	                       const std::function<void(const Info &)> & pre_render) = 0;
 };
 } // namespace Render

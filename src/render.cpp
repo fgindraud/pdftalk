@@ -167,9 +167,9 @@ SystemPrivate::SystemPrivate (int cache_size_bytes, PrefetchStrategy * strategy,
       parent_ (parent),
       cache_ (cache_size_bytes),
       prefetch_strategy_ (strategy),
-      prefetch_launch_render_lambda_ ([this](const Info & render) {
+      prefetch_render_lambda_ ([this](const Info & render) {
 	      qDebug () << "-> prefetch" << render;
-	      this->launch_render (render);
+	      this->prefetch_render (render);
       }) {}
 
 SystemPrivate::~SystemPrivate () {
@@ -195,7 +195,7 @@ void SystemPrivate::request_render (const Request & request) {
 	}
 
 	if (prefetch_strategy_ != nullptr) {
-		prefetch_strategy_->prefetch (request, prefetch_launch_render_lambda_);
+		prefetch_strategy_->prefetch (request, prefetch_render_lambda_);
 	}
 }
 
@@ -206,6 +206,9 @@ void SystemPrivate::rendering_finished (Info render_info, Compressed * compresse
 	emit parent_->new_render (render_info, pixmap);
 }
 
+void SystemPrivate::prefetch_render (const Info & render_info) {
+	//FIXME
+}
 void SystemPrivate::launch_render (const Info & render_info) {
 	// If not tracked: track, schedule render
 	if (!being_rendered_.contains (render_info)) {

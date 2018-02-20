@@ -14,10 +14,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "controller.h"
 #include "document.h"
 #include "render_internal.h"
 
 namespace Render {
+// Tools
+namespace {
+	void prefetch_next_n (const Request & context,
+	                      const std::function<void(const Info &)> & launch_render, int n) {
+		auto * current_page = context.current_page ();
+		do {
+			--n;
+			current_page = current_page->next_page ();
+
+			auto * render_page = page_for_role (current_page, context.role ());
+			if (render_page != nullptr) {
+				launch_render (Info{render_page, context.box_size ()});
+			}
+		} while (n > 0 && current_page != nullptr);
+	}
+	void prefetch_previous_n (const Request & context,
+	                          const std::function<void(const Info &)> & launch_render, int n) {
+		auto * current_page = context.current_page ();
+		do {
+			--n;
+			current_page = current_page->previous_page ();
+
+			auto * render_page = page_for_role (current_page, context.role ());
+			if (render_page != nullptr) {
+				launch_render (Info{render_page, context.box_size ()});
+			}
+		} while (n > 0 && current_page != nullptr);
+	}
+} // namespace
+
 // No prefetch
 class DisabledStrategy : public PrefetchStrategy {
 public:
@@ -25,25 +56,41 @@ public:
 	void prefetch (const Request &, const std::function<void(const Info &)> &) final {}
 };
 
-// Reasonnable prefetch
+/* Reasonnable prefetch:
+ * Always prefetch the next/prev page for every action.
+ * When moving, prefetch the 5 next pages in the direction of movement for current page role.
+ */
 class DefaultStrategy : public PrefetchStrategy {
 public:
-	static int directed_movement_window (ViewRole role) {
-		if (role == ViewRole::CurrentPublic || role == ViewRole::CurrentPresenter) {
-			return 5;
-		} else {
-			return 1;
-		}
-	}
-	static constexpr int default_window = 1;
-
 	DefaultStrategy () : PrefetchStrategy ("default") {}
 
 	void prefetch (const Request & context,
-	               const std::function<void(const Info &)> & launch_render) final {}
+	               const std::function<void(const Info &)> & launch_render) final {
+		bool has_directional_long_prefetch =
+		    context.role () == ViewRole::CurrentPublic || context.role () == ViewRole::CurrentPresenter;
+
+		if (has_directional_long_prefetch && context.cause () == RedrawCause::ForwardMove) {
+			prefetch_next_n (context, launch_render, 5);
+			prefetch_previous_n (context, launch_render, 1);
+		} else if (has_directional_long_prefetch && context.cause () == RedrawCause::BackwardMove) {
+			prefetch_next_n (context, launch_render, 1);
+			prefetch_previous_n (context, launch_render, 5);
+		} else {
+			prefetch_next_n (context, launch_render, 1);
+			prefetch_previous_n (context, launch_render, 1);
+		}
+	}
 };
 
-// Listing and selection
+/* Listing and selection.
+ *
+ * PrefetchStrategy instances are created as global variables.
+ * Only one of them will ever be used for the presentation, by the same thread.
+ * Thus this system is ok for now.
+ *
+ * PrefetchStrategy structures have a non const prefetch function.
+ * They might want to store and update an internal state.
+ */
 namespace {
 	DisabledStrategy disabled;
 	DefaultStrategy defaulted;
