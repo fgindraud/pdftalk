@@ -124,6 +124,10 @@ Request::Request (const Info & requested_render, const PageInfo * current_page, 
 	Q_ASSERT (cause != RedrawCause::Unknown);
 }
 
+// PrefetchStrategy
+
+PrefetchStrategy::PrefetchStrategy (const QString & name) : name_ (name) {}
+
 // Rendering, Compressing / Uncompressing primitives
 
 std::pair<Compressed *, QPixmap> make_render (const Info & render_info) {
@@ -151,12 +155,22 @@ QPixmap make_pixmap_from_compressed_render (const Compressed & render) {
 
 // System impl
 
-System::System (int cache_size_bytes, int prefetch_window)
-    : d_ (new SystemPrivate (cache_size_bytes, prefetch_window, this)) {}
+System::System (int cache_size_bytes, PrefetchStrategy * strategy)
+    : d_ (new SystemPrivate (cache_size_bytes, strategy, this)) {}
 
 void System::request_render (const Request & request) {
 	d_->request_render (request);
 }
+
+SystemPrivate::SystemPrivate (int cache_size_bytes, PrefetchStrategy * strategy, System * parent)
+    : QObject (parent),
+      parent_ (parent),
+      cache_ (cache_size_bytes),
+      prefetch_strategy_ (strategy),
+      prefetch_launch_render_lambda_ ([this](const Info & render) {
+	      qDebug () << "-> prefetch" << render;
+	      this->launch_render (render);
+      }) {}
 
 SystemPrivate::~SystemPrivate () {
 	qDebug () << QString ("Render cache: used %1 out of %2")
@@ -176,23 +190,13 @@ void SystemPrivate::request_render (const Request & request) {
 		                          make_pixmap_from_compressed_render (*compressed_render));
 	} else {
 		// Make new render (spawn a Task in a QThreadPool)
+		qDebug () << "-> render  " << request.requested_render ();
 		launch_render (request.requested_render ());
 	}
-	/* Prefetch pages around the request.
-	 * We only need to launch renders, no need to give an answer as there is no request.
-	 * FIXME fix, improve, use role and change context to decide prefetching
-	 * We have the box (Request, not just Info) to pre render the next slides.
-	 */
-	/*int window_remaining = prefetch_window_;
-	const PageInfo * forward = request.page->next_page ();
-	while (window_remaining > 0 && forward != nullptr) {
-	  qDebug () << "prefetch  " << *forward << request.size;
-	  Request prefetch{forward, request.size};
-	  if (!cache_.contains (prefetch))
-	    launch_render (requester, prefetch);
-	  forward = forward->next_page ();
-	  window_remaining--;
-	}*/
+
+	if (prefetch_strategy_ != nullptr) {
+		prefetch_strategy_->prefetch (request, prefetch_launch_render_lambda_);
+	}
 }
 
 void SystemPrivate::rendering_finished (Info render_info, Compressed * compressed, QPixmap pixmap) {
@@ -205,7 +209,6 @@ void SystemPrivate::rendering_finished (Info render_info, Compressed * compresse
 void SystemPrivate::launch_render (const Info & render_info) {
 	// If not tracked: track, schedule render
 	if (!being_rendered_.contains (render_info)) {
-		qDebug () << "-> render  " << render_info;
 		being_rendered_.insert (render_info);
 		auto * task = new Task (render_info);
 		connect (task, &Task::finished_rendering, this, &SystemPrivate::rendering_finished);

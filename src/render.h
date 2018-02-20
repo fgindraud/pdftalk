@@ -22,6 +22,7 @@ class PageInfo;
 #include <QDebug>
 #include <QPixmap>
 #include <QSize>
+#include <functional>
 
 /* Conversion between size str and integer size, with suffix support.
  * ("10k" <-> 10000)
@@ -88,6 +89,23 @@ public:
 	RedrawCause cause () const noexcept { return cause_; }
 };
 
+/* Prefetch strategy interface.
+ * Has a name for commandline identification.
+ * Strategies must implement the prefetch method.
+ * The context determines which pages will be pre rendered using launch_render.
+ */
+class PrefetchStrategy {
+private:
+	QString name_;
+
+public:
+	PrefetchStrategy (const QString & name);
+	virtual ~PrefetchStrategy () = default;
+	const QString & name () const noexcept { return name_; }
+	virtual void prefetch (const Request & context,
+	                       const std::function<void(const Info &)> & launch_render) = 0;
+};
+
 /* Global rendering system.
  * Classes (viewers) can request a render by signaling request_render().
  * After some time, new_render will return the requested pixmap.
@@ -95,17 +113,17 @@ public:
  *
  * Internally, the cost of rendering is reduced by caching (see render_internal.h).
  * Additionally, the pages next to the current one are pre-rendered.
- * cache_size_bytes sets the size of the cache in bytes.
- * prefetch_window controls the pre-rendering window (1 = next, ...)
+ * 'cache_size_bytes' sets the size of the cache in bytes.
+ * 'strategy' defines the prefetch strategy, it can be null (no prefetch).
  */
 class System : public QObject {
 	Q_OBJECT
 
 private:
-	SystemPrivate * d_;
+	SystemPrivate * d_; // Cleanup is done through the QObject ownership tree
 
 public:
-	System (int cache_size_bytes, int prefetch_window);
+	System (int cache_size_bytes, PrefetchStrategy * strategy);
 
 signals:
 	void new_render (const Info & render_info, QPixmap render_data);

@@ -41,7 +41,8 @@
  * When a page is rendered (QImage), we store a qCompressed version in the cache (Compressed).
  * Page requests are fulfilled from the Compressed if available, or from a render.
  *
- * Pre-rendering TODO
+ * Pre rendering is delegated to a PrefetchStrategy class.
+ * This class decides which pages to render based on the context from a Request.
  */
 namespace Render {
 
@@ -102,15 +103,12 @@ private:
 	System * parent_;
 	QCache<Info, Compressed> cache_;
 	QSet<Info> being_rendered_;
-	const int prefetch_window_;
+
+	PrefetchStrategy * prefetch_strategy_;
+	std::function<void(const Info &)> prefetch_launch_render_lambda_; // for PrefetchStrategy, cached
 
 public:
-	SystemPrivate (int cache_size_bytes, int prefetch_window, System * parent)
-	    : QObject (parent),
-	      parent_ (parent),
-	      cache_ (cache_size_bytes),
-	      prefetch_window_ (prefetch_window) {}
-
+	SystemPrivate (int cache_size_bytes, PrefetchStrategy * strategy, System * parent);
 	~SystemPrivate ();
 
 	void request_render (const Request & request);

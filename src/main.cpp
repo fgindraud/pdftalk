@@ -120,7 +120,7 @@ int main (int argc, char * argv[]) {
 	}
 
 	Controller control (*document);
-	Render::System renderer (render_cache_size, 1); // TODO prefetch strategy
+	Render::System renderer (render_cache_size, nullptr); // TODO prefetch strategy
 
 	// Setup windows
 	auto presentation_view = new PresentationView;
