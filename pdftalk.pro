@@ -21,6 +21,7 @@ SOURCES += \
 	src/controller.cpp \
 	src/document.cpp \
 	src/main.cpp \
+	src/prefetch_strategies.cpp \
 	src/render.cpp \
 	src/views.cpp
 

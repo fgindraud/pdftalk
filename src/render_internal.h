@@ -120,4 +120,21 @@ private slots:
 private:
 	void launch_render (const Info & render_info);
 };
+
+/* Prefetch strategy interface.
+ * Has a name for commandline identification.
+ * Strategies must implement the prefetch method.
+ * The context determines which pages will be pre rendered using launch_render.
+ */
+class PrefetchStrategy {
+private:
+	QString name_;
+
+public:
+	PrefetchStrategy (const QString & name);
+	virtual ~PrefetchStrategy () = default;
+	const QString & name () const noexcept { return name_; }
+	virtual void prefetch (const Request & context,
+	                       const std::function<void(const Info &)> & launch_render) = 0;
+};
 } // namespace Render

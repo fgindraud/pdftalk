@@ -22,6 +22,7 @@ class PageInfo;
 #include <QDebug>
 #include <QPixmap>
 #include <QSize>
+#include <QStringList>
 #include <functional>
 
 /* Conversion between size str and integer size, with suffix support.
@@ -33,6 +34,7 @@ QString size_in_bytes_to_string (int size);
 int string_to_size_in_bytes (QString size_str);
 
 namespace Render {
+class PrefetchStrategy;
 class SystemPrivate;
 
 /* Info represent a render metadata.
@@ -89,23 +91,6 @@ public:
 	RedrawCause cause () const noexcept { return cause_; }
 };
 
-/* Prefetch strategy interface.
- * Has a name for commandline identification.
- * Strategies must implement the prefetch method.
- * The context determines which pages will be pre rendered using launch_render.
- */
-class PrefetchStrategy {
-private:
-	QString name_;
-
-public:
-	PrefetchStrategy (const QString & name);
-	virtual ~PrefetchStrategy () = default;
-	const QString & name () const noexcept { return name_; }
-	virtual void prefetch (const Request & context,
-	                       const std::function<void(const Info &)> & launch_render) = 0;
-};
-
 /* Global rendering system.
  * Classes (viewers) can request a render by signaling request_render().
  * After some time, new_render will return the requested pixmap.
@@ -131,6 +116,14 @@ signals:
 public slots:
 	void request_render (const Request & request);
 };
+
+// List of defined prefetch strategies (names)
+QStringList list_of_prefetch_strategy_names ();
+
+// Select a PrefetchStrategy based on a name
+PrefetchStrategy * default_prefetch_strategy ();
+PrefetchStrategy * select_prefetch_strategy_by_name (const QString & name);
+
 } // namespace Render
 
 Q_DECLARE_METATYPE (Render::Info);

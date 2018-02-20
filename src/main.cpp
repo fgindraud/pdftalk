@@ -71,6 +71,7 @@ int main (int argc, char * argv[]) {
 	qRegisterMetaType<Render::Request> ();
 
 	int render_cache_size = 10 * (1 << 20); // 10MB default
+	auto * prefetch_strategy = Render::default_prefetch_strategy ();
 
 	// Command line parsing
 	QCommandLineParser parser;
@@ -88,6 +89,12 @@ int main (int argc, char * argv[]) {
 	                                          tr ("Annotation file name (default = file.pdfpc)"),
 	                                          tr ("file"));
 	parser.addOption (pdfpc_filename_option);
+	QCommandLineOption prefetch_strategy_option (
+	    QStringList () << "p"
+	                   << "prefetch",
+	    tr ("Prefetch strategy (%1)").arg (Render::list_of_prefetch_strategy_names ().join (',')),
+	    tr ("name"));
+	parser.addOption (prefetch_strategy_option);
 	parser.process (app);
 
 	auto arguments = parser.positionalArguments ();
@@ -114,13 +121,25 @@ int main (int argc, char * argv[]) {
 		pdfpc_filename = parser.value (pdfpc_filename_option);
 	}
 
+	if (parser.isSet (prefetch_strategy_option)) {
+		auto name = parser.value (prefetch_strategy_option);
+		auto * strategy = Render::select_prefetch_strategy_by_name (name);
+		if (strategy != nullptr) {
+			prefetch_strategy = strategy;
+		} else {
+			QTextStream (stderr)
+			    << tr ("Warning: prefetch strategy \"%1\" not found, falling back to default\n")
+			           .arg (name);
+		}
+	}
+
 	auto document = Document::open (filename, pdfpc_filename);
 	if (!document) {
 		return EXIT_FAILURE;
 	}
 
 	Controller control (*document);
-	Render::System renderer (render_cache_size, nullptr); // TODO prefetch strategy
+	Render::System renderer (render_cache_size, prefetch_strategy);
 
 	// Setup windows
 	auto presentation_view = new PresentationView;
