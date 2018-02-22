@@ -16,16 +16,16 @@
  */
 #pragma once
 
+#include <QLabel>
+#include <QPixmap>
+#include <QWidget>
+
 #include "controller.h"
 #include "render.h"
 class PageInfo;
 namespace Action {
 class Base;
 }
-
-#include <QLabel>
-#include <QPixmap>
-#include <QWidget>
 
 /* This widget will show a PDF page (using a QLabel).
  * It is shown maximized (keeping aspect ratio), and centered.

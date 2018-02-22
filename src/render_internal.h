@@ -16,7 +16,7 @@
  */
 #pragma once
 
-#include "render.h"
+#include <utility>
 
 #include <QByteArray>
 #include <QCache>
@@ -24,7 +24,8 @@
 #include <QImage>
 #include <QPixmap>
 #include <QRunnable>
-#include <utility>
+
+#include "render.h"
 
 /* Internal header of the rendering system.
  * Header is required for moc to process Task/SystemPrivate classes.

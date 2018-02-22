@@ -16,17 +16,17 @@
  */
 #pragma once
 
-class Document;
-class PageInfo;
-namespace Action {
-class Base;
-}
-
 #include <QBasicTimer>
 #include <QDebug>
 #include <QPixmap>
 #include <QTime>
 class QWidget;
+
+class Document;
+class PageInfo;
+namespace Action {
+class Base;
+}
 
 /* Timer for a presentation.
  * Can be paused, restarted, resetted.

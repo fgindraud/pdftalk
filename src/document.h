@@ -16,6 +16,12 @@
  */
 #pragma once
 
+#include <memory>
+#include <vector>
+
+#include <QDebug>
+#include <QString>
+
 namespace Action {
 class Base;
 }
@@ -25,11 +31,6 @@ class Page;
 } // namespace Poppler
 class PageInfo;
 class SlideInfo;
-
-#include <QDebug>
-#include <QString>
-#include <memory>
-#include <vector>
 
 /* A presentation (in beamer at least) is a pdf document.
  * A pdf document is flat and composed of pages (vector images).

@@ -14,16 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "render.h"
-#include "document.h"
-#include "render_internal.h"
-
 #include <QCoreApplication>
 #include <QHash>
 #include <QLocale>
 #include <QMetaType>
 #include <QThreadPool>
 #include <QtDebug>
+
+#include "document.h"
+#include "render.h"
+#include "render_internal.h"
 
 // Byte size conversion
 

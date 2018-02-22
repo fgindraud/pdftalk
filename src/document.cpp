@@ -14,18 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "document.h"
-#include "action.h"
-#include "utils.h"
+#include <algorithm>
+#include <cstdio>
 
 #include <QCoreApplication>
 #include <QDebugStateSaver>
 #include <QFile>
 #include <QImage>
 #include <QTextStream>
-#include <algorithm>
-#include <cstdio>
 #include <poppler-qt5.h>
+
+#include "action.h"
+#include "document.h"
+#include "utils.h"
 
 template <typename T> void set_pointer_once (const T *& ptr, const T * value) {
 	Q_ASSERT (ptr == nullptr);

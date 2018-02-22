@@ -16,10 +16,10 @@
  */
 #pragma once
 
-class Controller;
-
 #include <QRect>
 #include <QString>
+
+class Controller;
 
 namespace Action {
 /* All clickable actions derive from Base.

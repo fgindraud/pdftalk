@@ -13,12 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "action.h"
-#include "controller.h"
-
 #include <QApplication>
 #include <QDesktopServices>
 #include <QUrl>
+
+#include "action.h"
+#include "controller.h"
 
 namespace Action {
 void Quit::execute (Controller &) const {

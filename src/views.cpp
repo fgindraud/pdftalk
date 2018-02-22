@@ -14,9 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "views.h"
-#include "document.h"
-
 #include <QFont>
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -24,6 +21,9 @@
 #include <QSizeF>
 #include <QSizePolicy>
 #include <QVBoxLayout>
+
+#include "document.h"
+#include "views.h"
 
 // PageViewer
 
@@ -82,7 +82,7 @@ void PageViewer::receive_pixmap (const Render::Info & render_info, QPixmap pixma
 
 void PageViewer::update_label (RedrawCause cause) {
 	auto request = Render::Request{current_page_, size (), role_, cause};
-	auto new_render = request.requested_render();
+	auto new_render = request.requested_render ();
 	if (new_render != current_render_) {
 		current_render_ = new_render;
 		clear (); // Remove old pixmap

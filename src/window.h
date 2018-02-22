@@ -16,14 +16,15 @@
  */
 #pragma once
 
-#include "utils.h"
+#include <memory>
+#include <vector>
 
 #include <QApplication>
 #include <QKeySequence>
 #include <QMainWindow>
 #include <QShortcut>
-#include <memory>
-#include <vector>
+
+#include "utils.h"
 
 /* Simple container for presentation widgets.
  *

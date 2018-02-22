@@ -16,14 +16,15 @@
  */
 #pragma once
 
-#include "controller.h"
-class PageInfo;
+#include <functional>
 
 #include <QDebug>
 #include <QPixmap>
 #include <QSize>
 #include <QStringList>
-#include <functional>
+
+#include "controller.h"
+class PageInfo;
 
 /* Conversion between size str and integer size, with suffix support.
  * ("10k" <-> 10000)
