@@ -3,7 +3,7 @@ PDFTalk - PDF presentation tool
 
 [![Build Status](https://travis-ci.org/lereldarion/pdftalk.svg?branch=master)](https://travis-ci.org/lereldarion/pdftalk)
 [![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
-[![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/qt-localshare/releases/latest)
+[![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/pdftalk/releases/latest)
 
 pdfpc replacement built using Qt5.
 
@@ -43,6 +43,7 @@ Beta: functional, lacking some small functionnality.
 
 Todo:
 * Go to page/slide n
+* Output time repartition per slide
 
 Maybe Todo:
 * Auto spread windows on monitors
