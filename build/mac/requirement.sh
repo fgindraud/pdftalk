@@ -2,7 +2,7 @@
 set -xue
 
 # Install qt5 and poppler from brew
-brew update
+# brew update (disabled for test)
 brew install qt5
 brew install poppler --with-qt5
 
