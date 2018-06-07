@@ -20,11 +20,10 @@ echo "deb http://pkg.mxe.cc/repos/apt/debian wheezy main" \
 sudo apt-key adv --keyserver keyserver.ubuntu.com \
 	--recv-keys D43A795B73B16ABE9643FE1AFD8FFF16DB45C6AB
 
-# Install cross compiled Qt and binutils (and upx for binary compression)
+# Install cross compiled Qt and binutils
 # Add poppler, but mxe currently doesn't have qt5 support compiled in....
 sudo apt-get -y -q update
 sudo apt-get -y -q install \
-	upx-ucl \
 	mxe-${MXE_TARGET}-qtbase \
 	mxe-${MXE_TARGET}-binutils \
 	mxe-${MXE_TARGET}-poppler

@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -xue
 
-# Pack binary
+# Reduce binary size
 strip pdftalk
-upx -9 pdftalk || true
 
 cp pdftalk pdftalk-linux-$(uname -m)
 
