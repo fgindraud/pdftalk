@@ -1,6 +1,0 @@
--std=c++11
--Isrc
--isystem /usr/include/qt/
--isystem /usr/include/qt/QtCore
--isystem /usr/include/qt/QtGui
--isystem /usr/include/qt/QtWidgets
