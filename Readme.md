@@ -35,22 +35,22 @@ The timer can be paused/resumed with `p`, and resetted with `r`.
 The presenter window can show text annotations.
 It follows the pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
 The text file can easily be generated using the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package.
+A copy can be found in `test/`.
 
 Status
 ------
 
-Beta: functional, lacking some small functionnality.
+Operational.
 
-Todo:
+Some additional functionnality would be useful:
 * Go to page/slide n
 * Output time repartition per slide
 
-Maybe Todo:
-* Auto spread windows on monitors
+Maybe useful:
 * Disable screensaver
 * Presentation slide overview mode ?
 
-Will not bother doing:
+Will not support:
 * Support for durations (no animations for now)
 * Support for Poppler Rotation flags (don't know when it matters)
 * Movies
@@ -61,7 +61,7 @@ License
 
 ```
 PDFTalk - PDF presentation tool
-Copyright (C) 2016 - 2018 Francois Gindraud
+Copyright (C) 2016 - 2022 Francois Gindraud
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
