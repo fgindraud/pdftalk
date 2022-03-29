@@ -1,7 +1,6 @@
 PDFTalk - PDF presentation tool
 ===============================
 
-[![Build Status](https://travis-ci.org/lereldarion/pdftalk.svg?branch=master)](https://travis-ci.org/lereldarion/pdftalk)
 [![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
 [![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/pdftalk/releases/latest)
 
@@ -16,8 +15,10 @@ qmake
 make
 ```
 
-Requires Qt >= 5.3, C++11 compiler support, and poppler (including Qt5 bindings).
-Details about dependencies can be found in the `build/*/requirement.sh` files.
+Requirements:
+- C++11 compiler support
+- Qt >= 5.3
+- poppler library with Qt5 bindings
 
 Usage
 -----
