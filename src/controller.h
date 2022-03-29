@@ -18,6 +18,7 @@
 
 #include <QBasicTimer>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QPixmap>
 #include <QTime>
 class QWidget;
@@ -39,7 +40,7 @@ class Timing : public QObject {
 private:
 	QBasicTimer timer_;
 	QTime accumulated_; // Accumulated time until last pause
-	QTime last_resume_; // Time of last resume
+	QElapsedTimer last_resume_; // Time of last resume
 
 signals:
 	// Periodically fires to indicate timer status (time in text format)

@@ -221,7 +221,7 @@ std::unique_ptr<const Document> Document::open (const QString & filename,
 
 	document->read_annotations_from_file (pdfpc_filename);
 
-	return std::move (document);
+	return document;
 }
 
 bool Document::discover_document_structure () {
