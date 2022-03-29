@@ -1,6 +1,7 @@
 PDFTalk - PDF presentation tool
 ===============================
 
+![CI](https://github.com/lereldarion/pdftalk/actions/workflows/ci.yml/badge.svg)
 [![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
 [![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/pdftalk/releases/latest)
 

@@ -1,0 +1,16 @@
+name: ci
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: fetch dependencies
+        run: sudo apt-get update && sudo apt-get install -q -y qt5-default qt5-qmake libpoppler-qt5-dev
+      - name: qmake
+        run: qmake
+      - name: make
+        run: make
+      - name: run for usage
+        run: ./pdftalk --platform offscreen -h
