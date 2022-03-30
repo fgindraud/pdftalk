@@ -1,11 +1,18 @@
 PDFTalk - PDF presentation tool
 ===============================
 
-![CI](https://github.com/lereldarion/pdftalk/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/lereldarion/pdftalk/actions/workflows/ci.yml/badge.svg)](https://github.com/lereldarion/pdftalk/actions)
 [![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
 [![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/pdftalk/releases/latest)
 
-pdfpc replacement built using Qt5.
+Pdf document viewer specialised for doing presentations with _beamer_.
+This has been heavily inspired by [pdfpc](https://github.com/pdfpc/pdfpc), but built using Qt5.
+Key features :
+* One window for public, one for presenter with additional information (slide numbering, timer, text annotations, next slide).
+* Pdf render _cache_ and _prefect_ system, to enable very fast slide changes.
+
+PdfTalk was initially developped to fit my use case : simple, fast, and tiling-window-manager-friendly.
+_pdfpc_ has more features and is more actively supported.
 
 Setup
 -----
@@ -29,28 +36,32 @@ Starting the presentation tool is simple:
 pdftalk <pdf_document>
 ```
 
-It generates 2 windows, one for the spectators with the current slide, and one for the presenter with neighbouring slides, a timer, and slide numbering.
+PdfTalk creates 2 windows : one for the spectators with the current slide, and one for the presenter with neighbouring slides, a timer, and slide numbering.
 The windows can be placed on the two screens (use `s` key to swap them), and can be made fullscreen (`f` key).
 Navigation is standard (`→` `←` `space` keys).
 The timer can be paused/resumed with `p`, and resetted with `r`.
 
 The presenter window can show text annotations.
-It follows the pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
+It follows the **old** pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
 The text file can easily be generated using the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package.
 A copy can be found in `test/`.
 
-Status
-------
+Roadmap
+-------
 
-Operational.
+FIXME annotation handling:
+* pdfpc file format has changed over the years. Most recent seems to be JSON. [related issue](https://github.com/pdfpc/pdfpc/issues/605).
+* there is a [pdfpc.sty](https://www.ctan.org/tex-archive/macros/latex/contrib/pdfpc) package in latex-extra. Seems to default to PDF internal annotations.
+* revisit using pdf annotations ? [pdfpc handling here](https://github.com/pdfpc/pdfpc/blob/master/src/classes/metadata/pdf.vala). And/or old commit when I tried using them.
 
 Some additional functionnality would be useful:
+* Output time spent per slide, for training.
 * Go to page/slide n
-* Output time repartition per slide
+* Presentation slide overview mode ? Need to choose page sizes. Toggle with 'o' ? Could replace "go to n".
 
 Maybe useful:
-* Disable screensaver
-* Presentation slide overview mode ?
+* Disable screensaver ; no standard way to do this.
+* Spread windows on multiple screens on startup ?
 
 Will not support:
 * Support for durations (no animations for now)
