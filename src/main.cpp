@@ -65,19 +65,28 @@ int main (int argc, char * argv[]) {
 #undef XSTR
 	QApplication::setApplicationDisplayName ("PDFTalk");
 
-	auto tr = [&app](const char * s) { return app.translate ("main", s); };
+	auto tr = [&app] (const char * s) { return app.translate ("main", s); };
 
 	// Type registration (once before use in connect)
 	qRegisterMetaType<Render::Info> ();
 	qRegisterMetaType<Render::Request> ();
 
-	int render_cache_size = 10 * (1 << 20); // 10MB default
+	int render_cache_size = 50 * (1 << 20); // 50MB default
 	auto * prefetch_strategy = Render::default_prefetch_strategy ();
 
 	// Command line parsing
 	QCommandLineParser parser;
-	parser.setApplicationDescription (tr ("PDF presentation tool"));
+	parser.setApplicationDescription (
+	    tr ("PDF presentation tool.\n"
+	        "Creates two windows, one for the public, one for the presenter with additional info.\n"
+	        "Keybindings:\n"
+	        "  s: swap window contents\n"
+	        "  f: toggle fullscreen for window with focus\n"
+	        "  p: toggle pause for timer\n"
+	        "  r: reset timer\n"
+	        "  ← → space: navigation"));
 	parser.addHelpOption ();
+	parser.addVersionOption ();
 	parser.addPositionalArgument (tr ("file.pdf"), tr ("PDF file to open"));
 	QCommandLineOption render_cache_size_option (
 	    QStringList () << "c"
