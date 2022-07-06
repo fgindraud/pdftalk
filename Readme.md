@@ -38,7 +38,7 @@ pdftalk <pdf_document>
 
 PdfTalk creates 2 windows : one for the spectators with the current slide, and one for the presenter with neighbouring slides, a timer, and slide numbering.
 The windows can be placed on the two screens (use `s` key to swap them), and can be made fullscreen (`f` key).
-Navigation is standard (`→` `←` `space` keys).
+Navigation is standard (`→` `←` `space` `home` `end` keys).
 The timer can be paused/resumed with `p`, and resetted with `r`.
 
 The presenter window can show text annotations.

@@ -84,7 +84,7 @@ int main (int argc, char * argv[]) {
 	        "  f: toggle fullscreen for window with focus\n"
 	        "  p: toggle pause for timer\n"
 	        "  r: reset timer\n"
-	        "  ← → space: navigation"));
+	        "  ← → space home end: navigation"));
 	parser.addHelpOption ();
 	parser.addVersionOption ();
 	parser.addPositionalArgument (tr ("file.pdf"), tr ("PDF file to open"));

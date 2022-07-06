@@ -189,6 +189,14 @@ void add_shortcuts_to_widget (Controller & c, QWidget * widget) {
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("Space", "next_page key")), widget);
 		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_next_page);
 	}
+	{
+		auto sc = new QShortcut (QKeySequence (QObject::tr ("Home", "first_page key")), widget);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_first_page);
+	}
+	{
+		auto sc = new QShortcut (QKeySequence (QObject::tr ("End", "last_page key")), widget);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::go_to_last_page);
+	}
 	// 'g' for goto page prompt TODO
 
 	// Timer control
