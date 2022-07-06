@@ -93,6 +93,34 @@ QDebug operator<< (QDebug d, RedrawCause cause) {
 	return d;
 }
 
+// TimeTracker
+
+QTime TimeTracker::current_duration () const {
+	if (current_span_start_.isValid ()) {
+		return cumulated_spans_.addMSecs (current_span_start_.elapsed ());
+	} else {
+		return cumulated_spans_;
+	}
+}
+void TimeTracker::reset () {
+	cumulated_spans_ = QTime (0, 0);
+	current_span_start_.invalidate ();
+}
+void TimeTracker::start_span () {
+	current_span_start_.start ();
+}
+void TimeTracker::end_span () {
+	cumulated_spans_ = cumulated_spans_.addMSecs (current_span_start_.elapsed ());
+	current_span_start_.invalidate ();
+}
+void TimeTracker::flush_duration_to (QTime & destination) {
+	destination = destination.addMSecs (current_duration ().msecsSinceStartOfDay ());
+	cumulated_spans_ = QTime (0, 0);
+	if (current_span_start_.isValid ()) {
+		current_span_start_.start ();
+	}
+}
+
 // Controller
 
 Controller::Controller (const Document & document)
@@ -115,23 +143,29 @@ void Controller::go_to_last_page () {
 }
 
 void Controller::timer_toggle_pause () {
-	if (timer_.timer.isActive ()) {
-		timer_.timer.stop ();
-		timer_.accumulated = timer_.accumulated.addMSecs (timer_.last_resume.elapsed ());
+	if (timer_.isActive ()) {
+		timer_.stop ();
+		presentation_duration_.end_span ();
+		current_slide_duration_.end_span ();
 		generate_timer_status_update ();
 	} else {
-		start_timer ();
+		timer_.start (1000, this); // can cause misticks if too small
+		presentation_duration_.start_span ();
+		current_slide_duration_.start_span ();
+		generate_timer_status_update (); // Pause status changed
 	}
 }
 void Controller::timer_reset () {
-	timer_.timer.stop ();
-	timer_.accumulated = QTime{0, 0, 0};
+	timer_.stop ();
+	presentation_duration_.reset ();
+	current_slide_duration_.reset ();
 	generate_timer_status_update ();
 
 	// Reset slide timing info
-	for (SlideTimingInfo & info : timing_by_slide_) {
-		info = SlideTimingInfo{};
+	for (auto & info : timing_by_slide_) {
+		info = {};
 	}
+	timing_by_slide_[current_page_].reached = true;
 }
 
 void Controller::execute_action (const Action::Base * action) {
@@ -148,26 +182,45 @@ void Controller::bootstrap () {
 
 void Controller::navigation_change_page (int index, RedrawCause cause) {
 	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
+		// Track time
+		current_slide_duration_.flush_duration_to (timing_by_slide_[current_page_].time_spent_in_slide);
+		auto & index_timings = timing_by_slide_[index];
+		if (!index_timings.reached) {
+			index_timings.reached = true;
+			index_timings.slide_reached_at = presentation_duration_.current_duration ();
+		}
+		// Change page
 		current_page_ = index;
 		auto * page = document_.page (current_page_);
 		qDebug () << "# current  " << page;
 		emit current_page_changed (page, cause);
-		start_timer (); // Auto start if navigating
+		// Auto start timers if navigating
+		if (!timer_.isActive ()) {
+			timer_.start (1000, this);
+			presentation_duration_.start_span ();
+			generate_timer_status_update (); // Pause status changed
+		}
 	}
 }
 
 void Controller::generate_timer_status_update () {
-	QTime total = timer_.accumulated;
-	if (timer_.timer.isActive ())
-		total = total.addMSecs (timer_.last_resume.elapsed ());
-	emit timer_changed (!timer_.timer.isActive (), total.toString (tr ("HH:mm:ss")));
+	emit timer_changed (!timer_.isActive (),
+	                    presentation_duration_.current_duration ().toString (tr ("HH:mm:ss")));
 }
 
-void Controller::start_timer () {
-	if (!timer_.timer.isActive ()) {
-		timer_.timer.start (1000, this); // FIXME can cause misticks if too small...
-		timer_.last_resume.start ();
-		generate_timer_status_update (); // Pause status changed
+void Controller::output_timing_table () {
+	current_slide_duration_.flush_duration_to (timing_by_slide_[current_page_].time_spent_in_slide);
+
+	qInfo () << "slide"
+	         << "reached_at"
+	         << "time_spent";
+	for (std::size_t i = 0; i < timing_by_slide_.size (); i += 1) {
+		const auto & timing = timing_by_slide_[i];
+		if (timing.reached) {
+			qInfo () << (i + 1) << timing.slide_reached_at << timing.time_spent_in_slide;
+		} else {
+			qInfo () << (i + 1) << "never" << timing.time_spent_in_slide;
+		}
 	}
 }
 
@@ -207,5 +260,10 @@ void add_shortcuts_to_widget (Controller & c, QWidget * widget) {
 		auto sc = new QShortcut (QKeySequence (QObject::tr ("R", "timer_reset key")), widget);
 		sc->setAutoRepeat (false);
 		QObject::connect (sc, &QShortcut::activated, &c, &Controller::timer_reset);
+	}
+	{
+		auto sc = new QShortcut (QKeySequence (QObject::tr ("T", "timing_output key")), widget);
+		sc->setAutoRepeat (false);
+		QObject::connect (sc, &QShortcut::activated, &c, &Controller::output_timing_table);
 	}
 }

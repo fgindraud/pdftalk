@@ -59,6 +59,20 @@ const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role);
 enum class RedrawCause { Resize, ForwardMove, BackwardMove, RandomMove, Unknown };
 QDebug operator<< (QDebug d, RedrawCause cause);
 
+// Timer which tracks the time spent in the presentation / slide between pauses.
+// Accumulates time spent in "spans" between pauses.
+class TimeTracker {
+	QTime cumulated_spans_{0, 0};
+	QElapsedTimer current_span_start_;
+
+public:
+	QTime current_duration () const;
+	void reset ();
+	void start_span ();
+	void end_span ();
+	void flush_duration_to (QTime & destination);
+};
+
 /* Manage a presentation state (which slide/page is currently viewed).
  * Sends signals to indicate changes in timer, current page.
  * Views will decide what to show from the current_page and their selected roles.
@@ -70,14 +84,9 @@ private:
 	const Document & document_;
 	int current_page_{0}; // Main iterator over document
 
-	// Timer which tracks the time spent in the presentation between pauses.
-	// Can be paused, restarted, resetted. Emits periodic signals to update the gui.
-	struct TimerState {
-		QBasicTimer timer;         // Hardware timer which generates ticks
-		QTime accumulated;         // Cumulative time from start to last pause
-		QElapsedTimer last_resume; // Time of last resume
-	};
-	TimerState timer_;
+	QBasicTimer timer_; // Generate periodic timerEvent
+	TimeTracker presentation_duration_;
+	TimeTracker current_slide_duration_;
 
 	// Track timing information by slide, for presentation training
 	struct SlideTimingInfo {
@@ -105,6 +114,7 @@ public slots:
 	// Timer control
 	void timer_toggle_pause ();
 	void timer_reset ();
+	void output_timing_table ();
 
 	// Action
 	void execute_action (const Action::Base * action);
@@ -115,11 +125,8 @@ public slots:
 private:
 	void navigation_change_page (int new_page_index, RedrawCause cause);
 
-	// Event triggered by internal basic timer.
 	void timerEvent (QTimerEvent *) Q_DECL_FINAL { generate_timer_status_update (); }
-	// Call to emit the signal with current timer status (time in text format)
 	void generate_timer_status_update ();
-	void start_timer ();
 };
 
 // Sets keyboard shortcuts for the controller in a QWidget.
