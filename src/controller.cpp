@@ -21,46 +21,10 @@
 #include "controller.h"
 #include "document.h"
 
-// Timer
-
-void Timing::start () {
-	if (!timer_.isActive ())
-		start_or_resume_timing ();
-}
-void Timing::toggle_pause () {
-	if (timer_.isActive ()) {
-		timer_.stop ();
-		accumulated_ = accumulated_.addMSecs (last_resume_.elapsed ());
-		emit_update ();
-	} else {
-		start_or_resume_timing ();
-	}
-}
-void Timing::reset () {
-	timer_.stop ();
-	accumulated_ = QTime{0, 0, 0};
-	emit_update (); // Everything changed
-}
-
-void Timing::emit_update () {
-	QTime total = accumulated_;
-	if (timer_.isActive ())
-		total = total.addMSecs (last_resume_.elapsed ());
-	emit update (!timer_.isActive (), total.toString (tr ("HH:mm:ss")));
-}
-void Timing::timerEvent (QTimerEvent *) {
-	emit_update ();
-}
-void Timing::start_or_resume_timing () {
-	timer_.start (1000, this); // FIXME can cause misticks if too small...
-	last_resume_.start ();
-	emit_update (); // Pause status changed
-}
-
 // ViewRole
 
 QDebug operator<< (QDebug d, ViewRole role) {
-	auto select_str = [](ViewRole role) -> const char * {
+	auto select_str = [] (ViewRole role) -> const char * {
 		switch (role) {
 		case ViewRole::CurrentPublic:
 			return "CurrentPublic";
@@ -111,7 +75,7 @@ const PageInfo * page_for_role (const PageInfo * current_page, ViewRole role) {
 // RedrawCause
 
 QDebug operator<< (QDebug d, RedrawCause cause) {
-	auto select_str = [](RedrawCause cause) -> const char * {
+	auto select_str = [] (RedrawCause cause) -> const char * {
 		switch (cause) {
 		case RedrawCause::Resize:
 			return "Resize";
@@ -131,9 +95,8 @@ QDebug operator<< (QDebug d, RedrawCause cause) {
 
 // Controller
 
-Controller::Controller (const Document & document) : document_ (document) {
-	connect (&timer_, &Timing::update, this, &Controller::time_changed);
-}
+Controller::Controller (const Document & document)
+    : document_ (document), timing_by_slide_ (document.nb_slides ()) {}
 
 void Controller::go_to_page_index (int index) {
 	navigation_change_page (index, RedrawCause::RandomMove);
@@ -151,11 +114,31 @@ void Controller::go_to_last_page () {
 	go_to_page_index (document_.nb_pages () - 1);
 }
 
+void Controller::timer_toggle_pause () {
+	if (timer_.timer.isActive ()) {
+		timer_.timer.stop ();
+		timer_.accumulated = timer_.accumulated.addMSecs (timer_.last_resume.elapsed ());
+		generate_timer_status_update ();
+	} else {
+		start_timer ();
+	}
+}
+void Controller::timer_reset () {
+	timer_.timer.stop ();
+	timer_.accumulated = QTime{0, 0, 0};
+	generate_timer_status_update ();
+
+	// Reset slide timing info
+	for (SlideTimingInfo & info : timing_by_slide_) {
+		info = SlideTimingInfo{};
+	}
+}
+
 void Controller::execute_action (const Action::Base * action) {
 	action->execute (*this);
 }
 
-void Controller::reset () {
+void Controller::bootstrap () {
 	// Does not start timer !
 	current_page_ = 0;
 	qDebug () << "### reset ###";
@@ -169,7 +152,22 @@ void Controller::navigation_change_page (int index, RedrawCause cause) {
 		auto * page = document_.page (current_page_);
 		qDebug () << "# current  " << page;
 		emit current_page_changed (page, cause);
-		timer_start ();
+		start_timer (); // Auto start if navigating
+	}
+}
+
+void Controller::generate_timer_status_update () {
+	QTime total = timer_.accumulated;
+	if (timer_.timer.isActive ())
+		total = total.addMSecs (timer_.last_resume.elapsed ());
+	emit timer_changed (!timer_.timer.isActive (), total.toString (tr ("HH:mm:ss")));
+}
+
+void Controller::start_timer () {
+	if (!timer_.timer.isActive ()) {
+		timer_.timer.start (1000, this); // FIXME can cause misticks if too small...
+		timer_.last_resume.start ();
+		generate_timer_status_update (); // Pause status changed
 	}
 }
 

@@ -160,7 +160,7 @@ int main (int argc, char * argv[]) {
 	// Link non slide widgets to controller.
 	QObject::connect (&control, &Controller::current_page_changed, presenter_view,
 	                  &PresenterView::change_slide_info);
-	QObject::connect (&control, &Controller::time_changed, presenter_view,
+	QObject::connect (&control, &Controller::timer_changed, presenter_view,
 	                  &PresenterView::change_time);
 
 	// Link slide viewers to controller, actions, caching system
@@ -183,6 +183,6 @@ int main (int argc, char * argv[]) {
 	WindowShifter windows{presentation_view, presenter_view};
 
 	// Init system
-	QTimer::singleShot (0, &control, SLOT (reset ()));
+	QTimer::singleShot (0, &control, &Controller::bootstrap);
 	return app.exec ();
 }

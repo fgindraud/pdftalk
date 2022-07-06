@@ -21,6 +21,7 @@
 #include <QElapsedTimer>
 #include <QPixmap>
 #include <QTime>
+#include <vector>
 class QWidget;
 
 class Document;
@@ -28,35 +29,6 @@ class PageInfo;
 namespace Action {
 class Base;
 }
-
-/* Timer for a presentation.
- * Can be paused, restarted, resetted.
- * Tracks the time spent in the presentation between pauses.
- * Emits periodic signals to update the gui.
- */
-class Timing : public QObject {
-	Q_OBJECT
-
-private:
-	QBasicTimer timer_;
-	QTime accumulated_; // Accumulated time until last pause
-	QElapsedTimer last_resume_; // Time of last resume
-
-signals:
-	// Periodically fires to indicate timer status (time in text format)
-	void update (bool paused, QString time_text);
-
-public slots:
-	void start ();
-	void toggle_pause ();
-	void reset ();
-
-private:
-	// Internal primitives
-	void emit_update ();
-	void timerEvent (QTimerEvent *) Q_DECL_FINAL;
-	void start_or_resume_timing ();
-};
 
 /* View role.
  *
@@ -97,14 +69,30 @@ class Controller : public QObject {
 private:
 	const Document & document_;
 	int current_page_{0}; // Main iterator over document
-	Timing timer_;
+
+	// Timer which tracks the time spent in the presentation between pauses.
+	// Can be paused, restarted, resetted. Emits periodic signals to update the gui.
+	struct TimerState {
+		QBasicTimer timer;         // Hardware timer which generates ticks
+		QTime accumulated;         // Cumulative time from start to last pause
+		QElapsedTimer last_resume; // Time of last resume
+	};
+	TimerState timer_;
+
+	// Track timing information by slide, for presentation training
+	struct SlideTimingInfo {
+		bool reached = false;
+		QTime slide_reached_at{0, 0};
+		QTime time_spent_in_slide{0, 0};
+	};
+	std::vector<SlideTimingInfo> timing_by_slide_;
 
 public:
 	explicit Controller (const Document & document);
 
 signals:
 	void current_page_changed (const PageInfo * new_current_page, RedrawCause cause);
-	void time_changed (bool paused, QString new_time_text);
+	void timer_changed (bool paused, QString new_time_text);
 
 public slots:
 	// Page navigation (no effect if out of bounds)
@@ -115,18 +103,23 @@ public slots:
 	void go_to_last_page ();
 
 	// Timer control
-	void timer_start () { timer_.start (); }
-	void timer_toggle_pause () { timer_.toggle_pause (); }
-	void timer_reset () { timer_.reset (); }
+	void timer_toggle_pause ();
+	void timer_reset ();
 
 	// Action
 	void execute_action (const Action::Base * action);
 
-	// Full reset, also used for init
-	void reset ();
+	// Perform a full reset to initialize everything
+	void bootstrap ();
 
 private:
 	void navigation_change_page (int new_page_index, RedrawCause cause);
+
+	// Event triggered by internal basic timer.
+	void timerEvent (QTimerEvent *) Q_DECL_FINAL { generate_timer_status_update (); }
+	// Call to emit the signal with current timer status (time in text format)
+	void generate_timer_status_update ();
+	void start_timer ();
 };
 
 // Sets keyboard shortcuts for the controller in a QWidget.
