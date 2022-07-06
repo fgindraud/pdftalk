@@ -79,12 +79,14 @@ int main (int argc, char * argv[]) {
 	parser.setApplicationDescription (
 	    tr ("PDF presentation tool.\n"
 	        "Creates two windows, one for the public, one for the presenter with additional info.\n"
+			"\n"
 	        "Keybindings:\n"
 	        "  s: swap window contents\n"
 	        "  f: toggle fullscreen for window with focus\n"
 	        "  p: toggle pause for timer\n"
 	        "  r: reset timer\n"
-	        "  ← → space home end: navigation"));
+	        "  ← → space home end: navigation\n"
+	        "  t: output slide timings to a text file (TSV table)"));
 	parser.addHelpOption ();
 	parser.addVersionOption ();
 	parser.addPositionalArgument (tr ("file.pdf"), tr ("PDF file to open"));

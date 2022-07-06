@@ -192,16 +192,21 @@ void Controller::bootstrap () {
 
 void Controller::navigation_change_page (int index, RedrawCause cause) {
 	if (0 <= index && index < document_.nb_pages () && current_page_ != index) {
-		// Track time
-		current_slide_duration_.flush_duration_to (timing_by_slide_[current_page_].time_spent_in_slide);
-		auto & index_timings = timing_by_slide_[index];
-		if (!index_timings.reached) {
-			index_timings.reached = true;
-			index_timings.slide_reached_at = presentation_duration_.current_duration ();
-		}
-		// Change page
+		int current_slide_index = document_.page (current_page_)->slide ()->index ();
 		current_page_ = index;
-		auto * page = document_.page (current_page_);
+		const PageInfo * page = document_.page (current_page_);
+		int new_slide_index = page->slide ()->index ();
+		// Track time
+		if (new_slide_index != current_slide_index) {
+			current_slide_duration_.flush_duration_to (
+			    timing_by_slide_[current_slide_index].time_spent_in_slide);
+			auto & index_timings = timing_by_slide_[new_slide_index];
+			if (!index_timings.reached) {
+				index_timings.reached = true;
+				index_timings.slide_reached_at = presentation_duration_.current_duration ();
+			}
+		}
+		// Signal page change
 		qDebug () << "# current  " << page;
 		emit current_page_changed (page, cause);
 		// Auto start timers if navigating
@@ -220,16 +225,16 @@ void Controller::generate_timer_status_update () {
 }
 
 void Controller::output_timing_table () {
-	current_slide_duration_.flush_duration_to (timing_by_slide_[current_page_].time_spent_in_slide);
+	int current_slide = document_.page (current_page_)->slide ()->index ();
+	current_slide_duration_.flush_duration_to (timing_by_slide_[current_slide].time_spent_in_slide);
 
 	QString filename =
 	    QFileDialog::getSaveFileName (&presenter_view_, QObject::tr ("Save slide timings to..."));
 
 	QFile file (filename);
 	if (!file.open (QIODevice::WriteOnly | QIODevice::Text)) {
-		QString msg = QObject::tr ("Could not write to file : ");
-		msg.append (filename);
-		QMessageBox::critical (&presenter_view_, QObject::tr ("Error"), msg);
+		QMessageBox::critical (&presenter_view_, QObject::tr ("Error"),
+		                       QObject::tr ("Could not write to file: %1").arg (filename));
 		return;
 	}
 	QTextStream stream (&file);

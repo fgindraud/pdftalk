@@ -41,6 +41,9 @@ The windows can be placed on the two screens (use `s` key to swap them), and can
 Navigation is standard (`→` `←` `space` `home` `end` keys).
 The timer can be paused/resumed with `p`, and resetted with `r`.
 
+A summary of slides timing can ge written to a file after the presentation using `t`.
+For each visited slides, it indicates when the slide was first reached, and the cumulated time spent on the slide.
+
 The presenter window can show text annotations.
 It follows the **old** pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
 The text file can easily be generated using the [pdfpc-latex-notes](https://github.com/cebe/pdfpc-latex-notes) package.
@@ -55,7 +58,6 @@ FIXME annotation handling:
 * revisit using pdf annotations ? [pdfpc handling here](https://github.com/pdfpc/pdfpc/blob/master/src/classes/metadata/pdf.vala). And/or old commit when I tried using them.
 
 Some additional functionnality would be useful:
-* Output time spent per slide, for training.
 * Go to page/slide n
 * Presentation slide overview mode ? Need to choose page sizes. Toggle with 'o' ? Could replace "go to n".
 
