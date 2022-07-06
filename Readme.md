@@ -10,6 +10,7 @@ This has been heavily inspired by [pdfpc](https://github.com/pdfpc/pdfpc), but b
 Key features :
 * One window for public, one for presenter with additional information (slide numbering, timer, text annotations, next slide).
 * Pdf render _cache_ and _prefect_ system, to enable very fast slide changes.
+* Slide timing summary for training.
 
 PdfTalk was initially developped to fit my use case : simple, fast, and tiling-window-manager-friendly.
 _pdfpc_ has more features and is more actively supported.
@@ -42,7 +43,8 @@ Navigation is standard (`→` `←` `space` `home` `end` keys).
 The timer can be paused/resumed with `p`, and resetted with `r`.
 
 A summary of slides timing can ge written to a file after the presentation using `t`.
-For each visited slides, it indicates when the slide was first reached, and the cumulated time spent on the slide.
+For each visited slide, it indicates when the slide was first reached, and the total time spent on the slide.
+The generated file is a simple text file containing a table of *tab separated values*.
 
 The presenter window can show text annotations.
 It follows the **old** pdfpc model: a text file named `<pdf_file_name>.pdfpc` in the same directory as the pdf file.
