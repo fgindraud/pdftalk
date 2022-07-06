@@ -14,7 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QShortcut>
+#include <QTextStream>
 #include <QtDebug>
 
 #include "action.h"
@@ -107,11 +111,15 @@ void TimeTracker::reset () {
 	current_span_start_.invalidate ();
 }
 void TimeTracker::start_span () {
-	current_span_start_.start ();
+	if (!current_span_start_.isValid ()) {
+		current_span_start_.start ();
+	}
 }
 void TimeTracker::end_span () {
-	cumulated_spans_ = cumulated_spans_.addMSecs (current_span_start_.elapsed ());
-	current_span_start_.invalidate ();
+	if (current_span_start_.isValid ()) {
+		cumulated_spans_ = cumulated_spans_.addMSecs (current_span_start_.elapsed ());
+		current_span_start_.invalidate ();
+	}
 }
 void TimeTracker::flush_duration_to (QTime & destination) {
 	destination = destination.addMSecs (current_duration ().msecsSinceStartOfDay ());
@@ -123,8 +131,10 @@ void TimeTracker::flush_duration_to (QTime & destination) {
 
 // Controller
 
-Controller::Controller (const Document & document)
-    : document_ (document), timing_by_slide_ (document.nb_slides ()) {}
+Controller::Controller (const Document & document, QWidget & presenter_view)
+    : document_ (document),
+      timing_by_slide_ (document.nb_slides ()),
+      presenter_view_ (presenter_view) {}
 
 void Controller::go_to_page_index (int index) {
 	navigation_change_page (index, RedrawCause::RandomMove);
@@ -198,6 +208,7 @@ void Controller::navigation_change_page (int index, RedrawCause cause) {
 		if (!timer_.isActive ()) {
 			timer_.start (1000, this);
 			presentation_duration_.start_span ();
+			current_slide_duration_.start_span ();
 			generate_timer_status_update (); // Pause status changed
 		}
 	}
@@ -211,15 +222,26 @@ void Controller::generate_timer_status_update () {
 void Controller::output_timing_table () {
 	current_slide_duration_.flush_duration_to (timing_by_slide_[current_page_].time_spent_in_slide);
 
-	qInfo () << "slide"
-	         << "reached_at"
-	         << "time_spent";
+	QString filename =
+	    QFileDialog::getSaveFileName (&presenter_view_, QObject::tr ("Save slide timings to..."));
+
+	QFile file (filename);
+	if (!file.open (QIODevice::WriteOnly | QIODevice::Text)) {
+		QString msg = QObject::tr ("Could not write to file : ");
+		msg.append (filename);
+		QMessageBox::critical (&presenter_view_, QObject::tr ("Error"), msg);
+		return;
+	}
+	QTextStream stream (&file);
+	QString time_format = tr ("HH:mm:ss");
+	stream << "slide\treached_at\ttime_spent\n";
 	for (std::size_t i = 0; i < timing_by_slide_.size (); i += 1) {
 		const auto & timing = timing_by_slide_[i];
 		if (timing.reached) {
-			qInfo () << (i + 1) << timing.slide_reached_at << timing.time_spent_in_slide;
+			stream << (i + 1) << "\t" << timing.slide_reached_at.toString (time_format) << "\t"
+			       << timing.time_spent_in_slide.toString (time_format) << "\n";
 		} else {
-			qInfo () << (i + 1) << "never" << timing.time_spent_in_slide;
+			stream << (i + 1) << "\tnever\t" << timing.time_spent_in_slide.toString (time_format) << "\n";
 		}
 	}
 }

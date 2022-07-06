@@ -95,9 +95,10 @@ private:
 		QTime time_spent_in_slide{0, 0};
 	};
 	std::vector<SlideTimingInfo> timing_by_slide_;
+	QWidget & presenter_view_;
 
 public:
-	explicit Controller (const Document & document);
+	Controller (const Document & document, QWidget & presenter_view);
 
 signals:
 	void current_page_changed (const PageInfo * new_current_page, RedrawCause cause);

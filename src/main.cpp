@@ -148,12 +148,13 @@ int main (int argc, char * argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	Controller control (*document);
-	Render::System renderer (render_cache_size, prefetch_strategy);
-
-	// Setup windows
+	// Create all components
 	auto presentation_view = new PresentationView;
 	auto presenter_view = new PresenterView (document->nb_slides ());
+	Controller control (*document, *presenter_view);
+	Render::System renderer (render_cache_size, prefetch_strategy);
+
+	// Global shortcuts
 	add_shortcuts_to_widget (control, presentation_view);
 	add_shortcuts_to_widget (control, presenter_view);
 
