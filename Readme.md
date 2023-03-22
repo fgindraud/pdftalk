@@ -1,9 +1,9 @@
 PDFTalk - PDF presentation tool
 ===============================
 
-[![CI](https://github.com/lereldarion/pdftalk/actions/workflows/ci.yml/badge.svg)](https://github.com/lereldarion/pdftalk/actions)
-[![Localshare License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
-[![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/lereldarion/pdftalk/releases/latest)
+[![CI](https://github.com/fgindraud/pdftalk/actions/workflows/ci.yml/badge.svg)](https://github.com/fgindraud/pdftalk/actions)
+[![PDFTalk License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
+[![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/fgindraud/pdftalk/releases/latest)
 
 Pdf document viewer specialised for doing presentations with _beamer_.
 This has been heavily inspired by [pdfpc](https://github.com/pdfpc/pdfpc), but built using Qt5.
@@ -18,16 +18,17 @@ _pdfpc_ has more features and is more actively supported.
 Setup
 -----
 
-Compilation:
+Requirements to run `pdftalk` :
+- Qt >= 5.3
+- poppler library with Qt5 bindings
+
+Installing `libpoppler-qt5` on Debian/Ubuntu should be sufficient to run the precompiled binary in the [release section](https://github.com/fgindraud/pdftalk/releases/latest).
+
+Compilation from source requires a C++11 compiler and the header files for the required libraries. Steps :
 ```
 qmake
 make
 ```
-
-Requirements:
-- C++11 compiler support
-- Qt >= 5.3
-- poppler library with Qt5 bindings
 
 Usage
 -----
