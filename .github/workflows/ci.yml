@@ -7,11 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: fetch dependencies
-        run: sudo apt-get update && sudo apt-get install -q -y qt5-default qt5-qmake libpoppler-qt5-dev
-      - name: qmake
-        run: qmake
-      - name: make
-        run: make
+        run: sudo apt update && sudo apt install -y qt5-default qt5-qmake libpoppler-qt5-dev
+      - run: qmake
+      - run: make
       - name: run for usage
         run: ./pdftalk --platform offscreen -h
       # Release stuff
