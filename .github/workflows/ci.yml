@@ -6,15 +6,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: fetch dependencies
-        run: sudo apt update && sudo apt install -y qt5-default qt5-qmake libpoppler-qt5-dev
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt5-qmake libpoppler-qt5-dev
       - run: qmake
       - run: make
-      - name: run for usage
+      - name: Test run (usage)
         run: ./pdftalk --platform offscreen -h
       # Release stuff
       - run: mv pdftalk pdftalk-x86_64-ubuntu
-      - name: upload release
+      - name: Upload release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: ncipollo/release-action@v1
         with:
