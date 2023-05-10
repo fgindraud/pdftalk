@@ -3,7 +3,7 @@ PDFTalk - PDF presentation tool
 
 [![CI](https://github.com/fgindraud/pdftalk/actions/workflows/ci.yml/badge.svg)](https://github.com/fgindraud/pdftalk/actions)
 [![PDFTalk License](https://img.shields.io/badge/license-GPL3-blue.svg)](#license)
-[![Latest release](https://img.shields.io/github/release/lereldarion/pdftalk.svg)](https://github.com/fgindraud/pdftalk/releases/latest)
+[![Latest release](https://img.shields.io/github/release/fgindraud/pdftalk.svg)](https://github.com/fgindraud/pdftalk/releases/latest)
 
 Pdf document viewer specialised for doing presentations with _beamer_.
 This has been heavily inspired by [pdfpc](https://github.com/pdfpc/pdfpc), but built using Qt5.
